@@ -1,0 +1,7 @@
+[
+    { "id": 1, "operand1": 3, "operand2": 5, "operator": "+", "answer": 8 },
+    { "id": 2, "operand1": 10, "operand2": 4, "operator": "-", "answer": 6 },
+    { "id": 3, "operand1": 6, "operand2": 7, "operator": "*", "answer": 42 },
+    { "id": 4, "operand1": 20, "operand2": 5, "operator": "/", "answer": 4 }
+  ]
+  
