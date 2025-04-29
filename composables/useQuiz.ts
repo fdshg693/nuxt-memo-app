@@ -2,16 +2,14 @@ import { ref } from 'vue'
 
 export interface Question {
   id: number
-  operand1: number
-  operand2: number
-  operator: '+' | '-' | '*' | '/'
-  answer: number
+  question: string
+  answer: string
 }
 
 export function useQuiz() {
   const questions = ref<Question[]>([])
   const currentIndex = ref(0)
-  const userAnswer = ref<number | null>(null)
+  const userAnswer = ref<string | null>(null)
   const result = ref<string | null>(null)
 
   /**

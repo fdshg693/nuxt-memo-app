@@ -1,7 +1,52 @@
 [
-    { "id": 1, "operand1": 3, "operand2": 5, "operator": "+", "answer": 8 },
-    { "id": 2, "operand1": 10, "operand2": 4, "operator": "-", "answer": 6 },
-    { "id": 3, "operand1": 6, "operand2": 7, "operator": "*", "answer": 42 },
-    { "id": 4, "operand1": 20, "operand2": 5, "operator": "/", "answer": 4 }
-  ]
-  
+    {
+        "id": 1,
+        "question": "What is the capital of France?",
+        "answer": "Paris"
+    },
+    {
+        "id": 2,
+        "question": "What is 2 + 2?",
+        "answer": "4"
+    },
+    {
+        "id": 3,
+        "question": "What is the largest planet in our solar system?",
+        "answer": "Jupiter"
+    },
+    {
+        "id": 4,
+        "question": "Who wrote 'Romeo and Juliet'?",
+        "answer": "William Shakespeare"
+    },
+    {
+        "id": 5,
+        "question": "What is the boiling point of water?",
+        "answer": "100°C"
+    },
+    {
+        "id": 6,
+        "question": "What is the speed of light?",
+        "answer": "299,792,458 m/s"
+    },
+    {
+        "id": 7,
+        "question": "Who painted the Mona Lisa?",
+        "answer": "Leonardo da Vinci"
+    },
+    {
+        "id": 8,
+        "question": "What is the chemical symbol for gold?",
+        "answer": "Au"
+    },
+    {
+        "id": 9,
+        "question": "What is the largest mammal?",
+        "answer": "Blue whale"
+    },
+    {
+        "id": 10,
+        "question": "What is the currency of Japan?",
+        "answer": "Yen"
+    }
+]

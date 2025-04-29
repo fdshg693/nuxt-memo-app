@@ -2,15 +2,13 @@
     <div class="p-4 max-w-md mx-auto">
       <div class="mb-2">
         <span class="text-lg">
-          Q{{ questionIndex + 1 }}: {{ question.operand1 }}
-          {{ question.operator }} {{ question.operand2 }} =
+          Q{{ questionIndex + 1 }}: {{ question.question}}
         </span>
       </div>
   
       <div class="flex items-center">
         <input
-          v-model.number="localAnswer"
-          type="number"
+          v-model.string="localAnswer"
           placeholder="答えを入力"
           class="border rounded px-2 py-1 mr-2"
         />
@@ -45,17 +43,17 @@
   const props = defineProps<{
     question: Question
     questionIndex: number
-    userAnswer: number | null
+    userAnswer: string | null
     result: string | null
   }>()
   const emit = defineEmits<{
-    (e: 'update:answer', val: number | null): void
+    (e: 'update:answer', val: string | null): void
     (e: 'check'): void
     (e: 'next'): void
   }>()
   
   // v-modelのローカルコピー
-  const localAnswer = ref<number | null>(props.userAnswer)
+  const localAnswer = ref<string | null>(props.userAnswer)
   watch(
     () => localAnswer.value,
     (val) => {
