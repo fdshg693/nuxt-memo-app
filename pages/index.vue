@@ -1,4 +1,16 @@
 <template>
+  <div class="bg-gray-100 flex items-center justify-center">
+    <NuxtLink to="janken" class="
+       inline-block
+       px-8 py-4
+       font-semibold text-white
+       bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
+       rounded-full
+       shadow-lg
+       transform transition
+       hover:scale-105 hover:brightness-110
+       focus:outline-none focus:ring-4 focus:ring-purple-300">ジャンケンゲーム</NuxtLink>
+  </div>    
     <QuestionCard
       v-if="questions.length"
       :question="questions[currentIndex]"
