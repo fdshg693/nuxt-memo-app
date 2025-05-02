@@ -16,6 +16,10 @@
         <button @click="nextQuestion" class="mt-4 bg-gray-200 px-3 py-1 rounded">
             次の問題
         </button>
+        <div class="score">
+            <p>正解数: {{ correctNumber }}</p>
+            <p>不正解数: {{ wrongNumber }}</p>
+        </div>
     </div>
 </template>
 
@@ -28,6 +32,8 @@ const operator = ref<'+' | '-' | '×' | '÷'>('+')
 const userAnswer = ref<number | null>(null)
 const feedback = ref<string>('')
 const isCorrect = ref<boolean>(false)
+const correctNumber = ref<number>(0)
+const wrongNumber = ref<number>(0)
 
 // 出題用に利用可能な演算子
 const operators = ['+', '-', '×', '÷'] as const
@@ -76,9 +82,11 @@ function checkAnswer() {
     if (userAnswer.value === correctAnswer) {
         feedback.value = '正解！🎉'
         isCorrect.value = true
+        correctNumber.value++
     } else {
         feedback.value = `不正解… 正しい答えは ${correctAnswer} です。`
         isCorrect.value = false
+        wrongNumber.value++
     }
 }
 

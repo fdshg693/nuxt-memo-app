@@ -11,6 +11,8 @@ export function useQuiz() {
   const currentIndex = ref(0)
   const userAnswer = ref<string | null>(null)
   const result = ref<string | null>(null)
+  const correctNumber = ref(0)
+  const wrongNumber = ref(0)
 
   /**
    * JSONファイルから問題をロード
@@ -29,10 +31,13 @@ export function useQuiz() {
       return
     }
     const correct = questions.value[currentIndex.value].answer
-    result.value =
-      userAnswer.value === correct
-        ? '正解！'
-        : `不正解… 正解は ${correct} です`
+    if (userAnswer.value === correct) {
+      result.value = '正解！'
+      correctNumber.value++
+    } else {
+      result.value = `不正解！正解は「${correct}」です`
+      wrongNumber.value++
+    }
   }
 
   /**
@@ -50,6 +55,8 @@ export function useQuiz() {
     currentIndex,
     userAnswer,
     result,
+    correctNumber,
+    wrongNumber,
     loadQuestions,
     checkAnswer,
     nextQuestion,

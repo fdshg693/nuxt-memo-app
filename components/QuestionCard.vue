@@ -32,6 +32,10 @@
       >
         次の問題へ
       </button>
+      <div>
+        <p>正解数: {{ correctNumber }}</p>
+        <p>不正解数: {{ wrongNumber }}</p>
+      </div>
     </div>
   </template>
   
@@ -45,6 +49,8 @@
     questionIndex: number
     userAnswer: string | null
     result: string | null
+    correctNumber: number
+    wrongNumber: number
   }>()
   const emit = defineEmits<{
     (e: 'update:answer', val: string | null): void
