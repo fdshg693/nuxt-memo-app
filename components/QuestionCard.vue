@@ -73,5 +73,6 @@
   
   function emitNext() {
     emit('next')
+    localAnswer.value = null
   }
   </script>

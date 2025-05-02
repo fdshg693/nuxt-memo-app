@@ -16,6 +16,7 @@
     @next="nextQuestion" />
   <div v-else class="p-4 text-center">問題をロード中…</div>
   <RandomCalc />
+  <AIQuestion />
 </template>
 
 <script setup lang="ts">
@@ -23,6 +24,7 @@ import { onMounted } from 'vue'
 import { useQuiz } from '~/composables/useQuiz'
 import QuestionCard from '~/components/QuestionCard.vue'
 import RandomCalc from '~/components/RandomCalc.vue'
+import AIQuestion from '~/components/AIQuestion.vue'
 
 const {
   questions,

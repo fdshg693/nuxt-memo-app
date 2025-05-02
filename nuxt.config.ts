@@ -7,5 +7,13 @@ export default defineNuxtConfig({
     exposeConfig: true,
     viewer: true,
     // and more...
+  },
+  runtimeConfig: {
+    // サーバサイド専用のキー
+    openaiApiKey: process.env.OPENAI_API_KEY,
+    // クライアントにも公開するキー（NUXT_PUBLIC_ が自動的に消えます）
+    public: {
+      apiKey: process.env.NUXT_PUBLIC_API_KEY
+    }
   }
 })
