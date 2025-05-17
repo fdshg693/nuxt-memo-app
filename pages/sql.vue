@@ -1,4 +1,16 @@
 <template>
+    <div class="bg-gray-100 flex items-center justify-center">
+        <NuxtLink to="/" class="
+       inline-block
+       px-8 py-4
+       font-semibold text-white
+       bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500
+       rounded-full
+       shadow-lg
+       transform transition
+       hover:scale-105 hover:brightness-110
+       focus:outline-none focus:ring-4 focus:ring-purple-300">トップ</NuxtLink>
+    </div>
     <h1 class="text-2xl font-bold mb-6 text-blue-700">SQLの問題</h1>
     <div id="app" class="max-w-2xl mx-auto bg-white rounded-lg shadow p-6">
         <div v-if="currentQuestion" class="mb-4">
@@ -37,7 +49,7 @@
         <textarea v-model="sql" rows="5" cols="60" placeholder="ここにSQLを入力"
             class="w-full border border-gray-300 rounded p-2 mb-2 font-mono focus:outline-none focus:ring-2 focus:ring-blue-300 transition"></textarea>
         <br />
-        <button @click="executeSQL"
+        <button @click="executeUserSQL"
             class="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition mb-6">実行</button>
 
         <div v-if="result.length" class="mb-6">
@@ -58,6 +70,10 @@
                 </tbody>
             </table>
         </div>
+        <div class="mb-6">
+            <button @click="checkAnswer"
+                class="px-6 py-2 rounded bg-green-600 text-white font-semibold hover:bg-green-700 transition mb-2">解答を確認</button>
+        </div>
         <div>
             <p v-if="isCorrect === null" class="text-gray-500">まだ解答していません</p>
             <div v-else>
@@ -73,7 +89,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue';
+import isEqual from 'lodash/isEqual';
+import { ref, watch, onMounted, toRaw } from 'vue';
 import { useQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
 import { useNuxtApp } from '#app'
@@ -84,6 +101,7 @@ const $alasql = nuxt.$alasql as typeof import('alasql')
 const { questions, loadQuestions } = useQuiz();
 const { databases, loadDatabases, getDatabaseByName } = useSqlDb();
 const result = ref<Record<string, any>[]>([])
+const correctResult = ref<Record<string, any>[]>([])
 const index = ref(0);
 const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
@@ -130,7 +148,7 @@ function prevQuestion() {
     }
 }
 
-function executeSQL() {
+function executeUserSQL() {
     try {
         const db = getDatabaseByName(currentDbName.value);
         if (db) {
@@ -139,7 +157,6 @@ function executeSQL() {
                 result.value = res
                 columns.value = res.length ? Object.keys(res[0]) : []
             } else {
-                // DDL や更新系の戻り値
                 result.value = []
                 columns.value = []
             }
@@ -151,9 +168,35 @@ function executeSQL() {
         result.value = [];
         columns.value = [];
     }
-    console.log('Executing SQL:', sql.value);
-    console.log('Result:', result.value);
-    console.log('Columns:', columns.value);
+}
+
+function executeAnswerSQL() {
+    try {
+        const db = getDatabaseByName(currentDbName.value);
+        if (db) {
+            const res = $alasql(currentAnswer.value);
+            if (Array.isArray(res)) {
+                correctResult.value = res
+            } else {
+                result.value = []
+                correctResult.value = []
+            }
+        } else {
+            console.error('Database not found');
+        }
+    } catch (error) {
+        console.error('SQL execution error:', error);
+        result.value = [];
+        columns.value = [];
+    }
+}
+
+function checkAnswer() {
+    executeAnswerSQL();
+    isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
+    console.log('User SQL:', toRaw(result.value));
+    console.log('Correct SQL:', toRaw(correctResult.value));
+    console.log('isCorrect:', isCorrect.value);
 }
 
 watch([questions, index], setCurrentQA);
