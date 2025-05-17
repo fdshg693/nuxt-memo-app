@@ -19,48 +19,13 @@
                 <h2 class="text-xl font-bold text-indigo-700 mb-2">{{ currentQuestion }}</h2>
             </div>
 
-            <div class="flex gap-2 mb-6">
-                <button @click="prevQuestion" :disabled="index === 0"
-                    class="px-4 py-2 rounded-lg border border-gray-300 bg-gradient-to-r from-indigo-100 to-purple-100 hover:from-indigo-200 hover:to-purple-200 text-indigo-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition">
-                    前へ
-                </button>
-                <button @click="nextQuestion" :disabled="index === questions.length - 1"
-                    class="px-4 py-2 rounded-lg border border-gray-300 bg-gradient-to-r from-pink-100 to-purple-100 hover:from-pink-200 hover:to-purple-200 text-pink-700 font-semibold disabled:opacity-50 disabled:cursor-not-allowed transition">
-                    次へ
-                </button>
-            </div>
-            <div class="mb-6">
-                <p class="mb-2 text-gray-600">テーブル名: <span class="font-mono text-indigo-700 font-bold">{{ currentDbName
-                        }}</span></p>
-                <table class="w-full border border-purple-200 rounded-lg mb-2 overflow-hidden">
-                    <thead class="bg-gradient-to-r from-indigo-100 to-purple-100">
-                        <tr>
-                            <th v-for="col in allColumns" :key="col"
-                                class="px-2 py-1 border-b border-purple-100 text-left text-sm text-indigo-700 font-semibold">
-                                {{ col }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(row, idx) in allRows" :key="idx" class="hover:bg-indigo-50">
-                            <td v-for="col in allColumns" :key="col" class="px-2 py-1 border-b border-purple-50">{{
-                                row[col] }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <h2 class="text-lg font-bold text-purple-700 mb-2">SQLを実行する</h2>
-            <textarea v-model="sql" rows="5" cols="60" placeholder="ここにSQLを入力"
-                class="w-full border border-purple-200 rounded-lg p-3 mb-2 font-mono focus:outline-none focus:ring-2 focus:ring-purple-300 transition bg-indigo-50 text-indigo-900"></textarea>
-            <div class="flex gap-2 mb-6">
-                <button @click="executeUserSQL"
-                    class="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold hover:from-indigo-600 hover:to-purple-600 transition shadow">
-                    実行
-                </button>
-                <button @click="askAI"
-                    class="px-6 py-2 rounded-lg bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold hover:from-pink-600 hover:to-purple-600 transition shadow">
-                    AIに質問
-                </button>
-            </div>
+            <QuestionNavigation :index="index" :questions-length="questions.length" @prev="prevQuestion"
+                @next="nextQuestion" />
+
+            <DatabaseTable :db-name="currentDbName" :columns="allColumns" :rows="allRows" />
+
+            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" />
+
             <div v-if="aiAnswer || errorDisplay" class="mb-4">
                 <div v-if="aiAnswer"
                     class="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 text-indigo-800 p-3 rounded mb-2">
@@ -71,42 +36,9 @@
                 </div>
             </div>
 
-            <div v-if="result.length" class="mb-6">
-                <h3 class="font-semibold text-purple-700 mb-2">結果</h3>
-                <table class="w-full border border-purple-200 rounded-lg overflow-hidden">
-                    <thead class="bg-gradient-to-r from-indigo-100 to-purple-100">
-                        <tr>
-                            <th v-for="col in allColumns" :key="col"
-                                class="px-2 py-1 border-b border-purple-100 text-left text-sm text-indigo-700 font-semibold">
-                                {{ col }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="(row, idx) in result" :key="idx" class="hover:bg-indigo-50">
-                            <td v-for="col in allColumns" :key="col" class="px-2 py-1 border-b border-purple-50">{{
-                                row[col] }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="mb-6">
-                <button @click="checkAnswer"
-                    class="px-6 py-2 rounded-lg bg-gradient-to-r from-green-500 to-green-600 text-white font-bold hover:from-green-600 hover:to-green-700 transition shadow">
-                    解答を確認
-                </button>
-            </div>
-            <div>
-                <p v-if="isCorrect === null" class="text-gray-500">まだ解答していません</p>
-                <div v-else>
-                    <p class="font-semibold text-purple-700">解答例</p>
-                    <div v-if="currentAnswer">
-                        <pre
-                            class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 text-sm text-indigo-900 mb-2 border border-purple-100">{{ currentAnswer }}</pre>
-                    </div>
-                    <p v-if="isCorrect === true" class="text-green-600 font-bold">✅ 正解です！</p>
-                    <p v-else-if="isCorrect === false" class="text-red-600 font-bold">❌ 不正解です</p>
-                </div>
-            </div>
+            <ResultTable :columns="allColumns" :result="result" />
+
+            <AnswerCheck :is-correct="isCorrect" :current-answer="currentAnswer" @check="checkAnswer" />
         </div>
     </div>
 </template>
@@ -117,6 +49,11 @@ import isEqual from 'lodash/isEqual';
 import { useQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
 import { useNuxtApp } from '#app';
+import QuestionNavigation from '~/components/QuestionNavigation.vue';
+import DatabaseTable from '~/components/DatabaseTable.vue';
+import SqlEditor from '~/components/SqlEditor.vue';
+import ResultTable from '~/components/ResultTable.vue';
+import AnswerCheck from '~/components/AnswerCheck.vue';
 
 const nuxt = useNuxtApp();
 const $alasql = nuxt.$alasql as typeof import('alasql');
