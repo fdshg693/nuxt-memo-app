@@ -1,24 +1,32 @@
 <!-- components/ArithmeticQuiz.vue -->
 <template>
-    <div class="p-4 max-w-md mx-auto">
-        <h2>ランダム計算クイズ</h2>
-        <p class="question">{{ questionText }}</p>
+    <div
+        class="min-h-[60vh] bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 p-6 max-w-lg mx-auto rounded-2xl shadow-2xl border border-gray-100">
+        <h2 class="text-2xl font-extrabold mb-6 text-center text-blue-700 tracking-wide drop-shadow">ランダム計算クイズ</h2>
+        <p class="question text-lg text-gray-800 mb-4 text-center font-medium">{{ questionText }}</p>
 
-        <div class="input-group">
-            <input v-model.number="userAnswer" @keyup.enter="checkAnswer" type="number" placeholder="答えを入力" />
-            <button @click="checkAnswer" class="bg-blue-500 text-white px-3 py-1 rounded">回答する</button>
+        <div class="flex items-center gap-2 mb-2 justify-center">
+            <input v-model.number="userAnswer" @keyup.enter="checkAnswer" type="number" placeholder="答えを入力"
+                class="border border-gray-300 rounded-xl px-3 py-2 w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-300 shadow-sm text-base transition-all" />
+            <button @click="checkAnswer"
+                class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-xl font-semibold shadow hover:from-blue-600 hover:to-purple-600 transition-all">
+                回答する
+            </button>
         </div>
 
-        <p v-if="feedback" :class="{ 'correct': isCorrect, 'wrong': !isCorrect }">
-            {{ feedback }}
-        </p>
+        <div v-if="feedback" class="mt-4 flex justify-center">
+            <span :class="isCorrect ? 'text-green-600 font-bold text-lg' : 'text-red-600 font-bold text-lg'">
+                {{ feedback }}
+            </span>
+        </div>
 
-        <button @click="nextQuestion" class="mt-4 bg-gray-200 px-3 py-1 rounded">
+        <button @click="nextQuestion"
+            class="mt-6 w-full bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl font-medium shadow transition-all border border-gray-200">
             次の問題
         </button>
-        <div class="score">
-            <p>正解数: {{ correctNumber }}</p>
-            <p>不正解数: {{ wrongNumber }}</p>
+        <div class="flex justify-between mt-6 px-2">
+            <p class="text-green-700 font-semibold">正解数: <span class="font-bold">{{ correctNumber }}</span></p>
+            <p class="text-red-700 font-semibold">不正解数: <span class="font-bold">{{ wrongNumber }}</span></p>
         </div>
     </div>
 </template>

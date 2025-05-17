@@ -4,6 +4,7 @@ import { defineEventHandler, readBody } from 'h3'
 export default defineEventHandler(async (event) => {
     const { prompt } = await readBody(event)
     const config = useRuntimeConfig()
+    console.log("prompt:", prompt)
     try {
         const response: any = await $fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
