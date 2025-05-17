@@ -52,7 +52,7 @@
                 <tbody>
                     <tr v-for="(row, idx) in result" :key="idx" class="hover:bg-blue-50">
                         <td v-for="col in allColumns" :key="col" class="px-2 py-1 border-b border-gray-100">{{ row[col]
-                            }}
+                        }}
                         </td>
                     </tr>
                 </tbody>
@@ -76,19 +76,25 @@
 import { ref, watch, onMounted } from 'vue';
 import { useQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
+import { useNuxtApp } from '#app'
+
+const nuxt = useNuxtApp()
+const $alasql = nuxt.$alasql as typeof import('alasql')
 
 const { questions, loadQuestions } = useQuiz();
 const { databases, loadDatabases, getDatabaseByName } = useSqlDb();
-const result = ref<any[]>([]);
+const result = ref<Record<string, any>[]>([])
 const index = ref(0);
 const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
+const error = ref<string | null>(null);
 
 const currentQuestion = ref('');
 const currentAnswer = ref('');
 const currentDbName = ref('');
 const allColumns = ref<string[]>([]);
 const allRows = ref<any[]>([]);
+const columns = ref<string[]>([]);
 
 function setCurrentQA() {
     if (questions.value.length > 0) {
@@ -125,9 +131,29 @@ function prevQuestion() {
 }
 
 function executeSQL() {
-    // SQL実行ロジックをここに
-    // 例: result.value = db.execute(sql.value);
+    try {
+        const db = getDatabaseByName(currentDbName.value);
+        if (db) {
+            const res = $alasql(sql.value);
+            if (Array.isArray(res)) {
+                result.value = res
+                columns.value = res.length ? Object.keys(res[0]) : []
+            } else {
+                // DDL や更新系の戻り値
+                result.value = []
+                columns.value = []
+            }
+        } else {
+            console.error('Database not found');
+        }
+    } catch (error) {
+        console.error('SQL execution error:', error);
+        result.value = [];
+        columns.value = [];
+    }
     console.log('Executing SQL:', sql.value);
+    console.log('Result:', result.value);
+    console.log('Columns:', columns.value);
 }
 
 watch([questions, index], setCurrentQA);
