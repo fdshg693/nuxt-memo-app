@@ -51,6 +51,9 @@
         <br />
         <button @click="executeUserSQL"
             class="px-6 py-2 rounded bg-blue-600 text-white font-semibold hover:bg-blue-700 transition mb-6">実行</button>
+        <button @click="askAI"
+            class="px-6 py-2 rounded bg-gray-600 text-white font-semibold hover:bg-gray-700 transition mb-2">AIに質問</button>
+        <div>AIの回答: {{ aiAnswer }}</div>
 
         <div v-if="result.length" class="mb-6">
             <h3 class="font-semibold text-gray-700 mb-2">結果</h3>
@@ -105,7 +108,9 @@ const correctResult = ref<Record<string, any>[]>([])
 const index = ref(0);
 const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
-const error = ref<string | null>(null);
+const errorDisplay = ref<string | null>(null);
+const db = ref<any>(null);
+const aiAnswer = ref<string>('');
 
 const currentQuestion = ref('');
 const currentAnswer = ref('');
@@ -121,10 +126,10 @@ function setCurrentQA() {
         currentDbName.value = questions.value[index.value].DbName;
 
         // Load the current database schema
-        const db = getDatabaseByName(currentDbName.value);
-        if (db) {
-            allColumns.value = db.columns;
-            allRows.value = db.rows;
+        db.value = getDatabaseByName(currentDbName.value);
+        if (db.value) {
+            allColumns.value = db.value.columns;
+            allRows.value = db.value.rows;
         }
     } else {
         currentQuestion.value = '';
@@ -150,8 +155,7 @@ function prevQuestion() {
 
 function executeUserSQL() {
     try {
-        const db = getDatabaseByName(currentDbName.value);
-        if (db) {
+        if (db.value) {
             const res = $alasql(sql.value);
             if (Array.isArray(res)) {
                 result.value = res
@@ -168,12 +172,34 @@ function executeUserSQL() {
         result.value = [];
         columns.value = [];
     }
+    isCorrect.value = null;
+}
+
+async function askAI() {
+    const prompt = `
+            あなたはSQL教師です。
+            SQLクエリと問題文が与えられます。
+            あなたの役割は、そのSQLクエリが正しく、問題文を解決できるかどうかを確認することです。
+            問題文: ${currentQuestion.value}
+            データベース名: ${currentDbName.value}
+            カラム名: ${allColumns.value.join(', ')}
+            データベースの内容: ${JSON.stringify(allRows.value)}
+            SQLクエリ: ${sql.value}
+            `;
+    const { data: aiResponse, error } = await useFetch('/api/openai', {
+        method: 'POST',
+        body: { prompt },
+    });
+    if (error.value) {
+        errorDisplay.value = 'AIからの応答に失敗しました。';
+    } else {
+        aiAnswer.value = aiResponse.value;
+    }
 }
 
 function executeAnswerSQL() {
     try {
-        const db = getDatabaseByName(currentDbName.value);
-        if (db) {
+        if (db.value) {
             const res = $alasql(currentAnswer.value);
             if (Array.isArray(res)) {
                 correctResult.value = res
@@ -194,9 +220,6 @@ function executeAnswerSQL() {
 function checkAnswer() {
     executeAnswerSQL();
     isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
-    console.log('User SQL:', toRaw(result.value));
-    console.log('Correct SQL:', toRaw(correctResult.value));
-    console.log('isCorrect:', isCorrect.value);
 }
 
 watch([questions, index], setCurrentQA);
