@@ -1,0 +1,12 @@
+[
+    {
+        "question": "ユーザーの名前を取得する",
+        "answer": "SELECT name FROM users",
+        "DbName": "users"
+    },
+    {
+        "question": "お客さんの年齢を取得する",
+        "answer": "SELECT age FROM customers",
+        "DbName": "customers"
+    }
+]
