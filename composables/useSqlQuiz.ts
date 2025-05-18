@@ -1,8 +1,3 @@
-// how this file is used
-// const { questions, currentIndex, loadQuestions } = useQuiz();
-//const currentQuestion = ref(questions[index.value]);
-//const currentAnswer = ref(questions[index.value].answer);
-
 import { ref } from 'vue'
 
 export function useQuiz() {
@@ -10,7 +5,7 @@ export function useQuiz() {
 
     async function loadQuestions() {
         // Load questions from an Internal Json file
-        const response = await fetch('api/sqlQuestions')
+        const response = await fetch('../api/sqlQuestions')
         questions.value = await response.json()
     }
 

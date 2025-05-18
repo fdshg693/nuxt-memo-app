@@ -5,7 +5,7 @@ export function useSqlDb() {
 
     async function loadDatabases() {
         // Load databases from an Internal Json file
-        const response = await fetch('api/sqlDatabases')
+        const response = await fetch('../api/sqlDatabases')
         databases.value = await response.json()
     }
 
