@@ -25,8 +25,8 @@
         "DbName": "users"
     },
     {
-        "question": "特定の商品の在庫数を取得する",
-        "answer": "SELECT stock FROM products WHERE product_id = ?",
-        "DbName": "products"
+        "question": "INNER JOINを使用して、ユーザーと注文の情報を結合する",
+        "answer": "SELECT users.name, orders.total_amount FROM users INNER JOIN orders ON users.id = orders.user_id",
+        "DbName": "users,orders"
     }
 ]

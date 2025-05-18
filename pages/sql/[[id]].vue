@@ -21,8 +21,9 @@
 
             <QuestionNavigation :index="index" :questions-length="questions.length" @prev="prevQuestion"
                 @next="nextQuestion" />
-
-            <DatabaseTable :db-name="currentDbName" :columns="allColumns" :rows="allRows" />
+            <div v-for="db in currentDbs" :key="db.name">
+                <DatabaseTable :db="db" />
+            </div>
 
             <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading" />
 
@@ -36,7 +37,7 @@
                 </div>
             </div>
 
-            <ResultTable :columns="allColumns" :result="result" />
+            <ResultTable :columns="userAnswerColumns" :result="result" />
             <div v-if="sqlErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
                 {{ sqlErrorDisplay }}
             </div>
@@ -76,13 +77,11 @@ const isAiLoading = ref(false);
 // Current question/answer/db
 const currentQuestion = ref('');
 const currentAnswer = ref('');
-const currentDbName = ref('');
+const currentDbNames = ref<string[]>([]);
 
 // DB data
-const currentDb = ref<any>(null);
-const allColumns = ref<string[]>([]);
-const allRows = ref<any[]>([]);
-const columns = ref<string[]>([]);
+const currentDbs = ref<any[]>([]);
+const userAnswerColumns = ref<string[]>([]);
 
 // Results
 const result = ref<Record<string, any>[]>([]);
@@ -91,25 +90,20 @@ const sqlErrorDisplay = ref<string | null>(null);
 
 // Route params
 const route = useRoute()
-const raw = route.params.id as string[] | undefined
 const index = ref(Number(route.params.id ?? 0))
 
 function setCurrentQA() {
     if (questions.value.length > 0 && index.value >= 0 && index.value < questions.value.length) {
         currentQuestion.value = questions.value[index.value].question;
         currentAnswer.value = questions.value[index.value].answer;
-        currentDbName.value = questions.value[index.value].DbName;
+        currentDbNames.value = questions.value[index.value].DbName.split(',');
 
         // Load the current database schema
-        currentDb.value = getDatabaseByName(currentDbName.value);
-        if (currentDb.value) {
-            allColumns.value = currentDb.value.columns;
-            allRows.value = currentDb.value.rows;
-        }
+        currentDbs.value = currentDbNames.value.map(dbName => getDatabaseByName(dbName));
     } else {
         currentQuestion.value = '問題が見つかりません';
         currentAnswer.value = '';
-        currentDbName.value = '';
+        currentDbNames.value = [];
     }
 }
 
@@ -130,21 +124,21 @@ function prevQuestion() {
 
 function executeUserSQL() {
     try {
-        if (currentDb.value) {
+        if (currentDbs.value) {
             const res = $alasql(sql.value);
             if (Array.isArray(res)) {
                 result.value = res
-                columns.value = res.length ? Object.keys(res[0]) : []
+                userAnswerColumns.value = res.length ? Object.keys(res[0]) : []
             } else {
                 result.value = []
-                columns.value = []
+                userAnswerColumns.value = []
             }
         } else {
             sqlErrorDisplay.value = 'データベースが見つかりません';
         }
     } catch (error) {
         result.value = [];
-        columns.value = [];
+        userAnswerColumns.value = [];
         sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${(error instanceof Error ? error.message : String(error))}`;
     }
     isCorrect.value = null;
@@ -154,15 +148,22 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
     aiAnswer.value = '';
+    let databasesInfo = "";
+    for (const db of currentDbs.value) {
+        databasesInfo += `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n`;
+        for (const row of db.rows) {
+            databasesInfo += `${JSON.stringify(row)}\n`;
+        }
+    }
     const prompt = `
             あなたはSQL教師です。
             SQLクエリと問題文が与えられます。
             あなたの役割は、SQLに関するユーザの質問に答えることです。
             -----------------            
             問題文: ${currentQuestion.value}
-            データベース名: ${currentDbName.value}
-            カラム名: ${allColumns.value.join(', ')}
-            データベースの内容: ${JSON.stringify(allRows.value)}
+            正しいSQLクエリ: ${currentAnswer.value}
+            データベースの情報:
+            ${databasesInfo}
             ユーザの質問: ${userPrompt}
             ユーザの入力したSQLクエリ: ${sql.value}
             -----------------
@@ -177,16 +178,16 @@ async function askAI(userPrompt: string) {
         aiAnswer.value = aiResponse.value;
     }
     isAiLoading.value = false;
+    console.log('AIの応答:', aiResponse.value);
 }
 
 function executeAnswerSQL() {
     try {
-        if (currentDb.value) {
+        if (currentDbs.value) {
             const res = $alasql(currentAnswer.value);
             if (Array.isArray(res)) {
                 correctResult.value = res
             } else {
-                result.value = []
                 correctResult.value = []
             }
         } else {
@@ -194,8 +195,7 @@ function executeAnswerSQL() {
         }
     } catch (error) {
         console.error('Unexpected Correct SQL execution error:', error);
-        result.value = [];
-        columns.value = [];
+        correctResult.value = [];
     }
 }
 
