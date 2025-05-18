@@ -10,7 +10,7 @@ export function useQuiz() {
 
     async function loadQuestions() {
         // Load questions from an Internal Json file
-        const response = await fetch('api/sqlQuestions')
+        const response = await fetch('../api/sqlQuestions')
         questions.value = await response.json()
     }
 

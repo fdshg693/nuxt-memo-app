@@ -26,17 +26,20 @@
 
             <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" />
 
-            <div v-if="aiAnswer || errorDisplay" class="mb-4">
+            <div v-if="aiAnswer || aiErrorDisplay" class="mb-4">
                 <div v-if="aiAnswer"
                     class="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 text-indigo-800 p-3 rounded mb-2">
                     <span class="font-semibold">AIの回答:</span> {{ aiAnswer }}
                 </div>
-                <div v-if="errorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
-                    {{ errorDisplay }}
+                <div v-if="aiErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
+                    {{ aiErrorDisplay }}
                 </div>
             </div>
 
             <ResultTable :columns="allColumns" :result="result" />
+            <div v-if="sqlErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
+                {{ sqlErrorDisplay }}
+            </div>
 
             <AnswerCheck :is-correct="isCorrect" :current-answer="currentAnswer" @check="checkAnswer" />
         </div>
@@ -45,6 +48,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted, toRaw } from 'vue';
+import { useRoute } from 'vue-router'
 import isEqual from 'lodash/isEqual';
 import { useQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
@@ -63,10 +67,9 @@ const { questions, loadQuestions } = useQuiz();
 const { databases, loadDatabases, getDatabaseByName } = useSqlDb();
 
 // State refs
-const index = ref(0);
 const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
-const errorDisplay = ref<string | null>(null);
+const aiErrorDisplay = ref<string | null>(null);
 const aiAnswer = ref<string>('');
 
 // Current question/answer/db
@@ -83,9 +86,15 @@ const columns = ref<string[]>([]);
 // Results
 const result = ref<Record<string, any>[]>([]);
 const correctResult = ref<Record<string, any>[]>([]);
+const sqlErrorDisplay = ref<string | null>(null);
+
+// Route params
+const route = useRoute()
+const raw = route.params.id as string[] | undefined
+const index = ref(Number(route.params.id ?? 0))
 
 function setCurrentQA() {
-    if (questions.value.length > 0) {
+    if (questions.value.length > 0 && index.value >= 0 && index.value < questions.value.length) {
         currentQuestion.value = questions.value[index.value].question;
         currentAnswer.value = questions.value[index.value].answer;
         currentDbName.value = questions.value[index.value].DbName;
@@ -97,7 +106,7 @@ function setCurrentQA() {
             allRows.value = currentDb.value.rows;
         }
     } else {
-        currentQuestion.value = '';
+        currentQuestion.value = '問題が見つかりません';
         currentAnswer.value = '';
         currentDbName.value = '';
     }
@@ -130,33 +139,34 @@ function executeUserSQL() {
                 columns.value = []
             }
         } else {
-            console.error('Database not found');
+            sqlErrorDisplay.value = 'データベースが見つかりません';
         }
     } catch (error) {
-        console.error('SQL execution error:', error);
         result.value = [];
         columns.value = [];
+        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${(error instanceof Error ? error.message : String(error))}`;
     }
     isCorrect.value = null;
 }
 
-async function askAI() {
+async function askAI(userPrompt: string) {
     const prompt = `
             あなたはSQL教師です。
             SQLクエリと問題文が与えられます。
-            あなたの役割は、そのSQLクエリが正しく、問題文を解決できるかどうかを確認することです。
+            あなたの役割は、SQLに関するユーザの質問に答えることです。
+            ユーザの質問: ${userPrompt}
             問題文: ${currentQuestion.value}
             データベース名: ${currentDbName.value}
             カラム名: ${allColumns.value.join(', ')}
             データベースの内容: ${JSON.stringify(allRows.value)}
-            SQLクエリ: ${sql.value}
+            ユーザの入力したSQLクエリ: ${sql.value}
             `;
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
         body: { prompt },
     });
     if (error.value) {
-        errorDisplay.value = 'AIからの応答に失敗しました。';
+        aiErrorDisplay.value = 'AIからの応答に失敗しました。';
     } else {
         aiAnswer.value = aiResponse.value;
     }
@@ -173,10 +183,10 @@ function executeAnswerSQL() {
                 correctResult.value = []
             }
         } else {
-            console.error('Database not found');
+            console.error('Unexpected Correct Database not found');
         }
     } catch (error) {
-        console.error('SQL execution error:', error);
+        console.error('Unexpected Correct SQL execution error:', error);
         result.value = [];
         columns.value = [];
     }

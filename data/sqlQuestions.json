@@ -8,5 +8,25 @@
         "question": "お客さんの年齢を取得する",
         "answer": "SELECT age FROM customers",
         "DbName": "customers"
+    },
+    {
+        "question": "商品名を取得する",
+        "answer": "SELECT product_name FROM products",
+        "DbName": "products"
+    },
+    {
+        "question": "注文の合計金額を取得する",
+        "answer": "SELECT SUM(total_amount) FROM orders",
+        "DbName": "orders"
+    },
+    {
+        "question": "特定のユーザーのメールアドレスを取得する",
+        "answer": "SELECT email FROM users WHERE user_id = ?",
+        "DbName": "users"
+    },
+    {
+        "question": "特定の商品の在庫数を取得する",
+        "answer": "SELECT stock FROM products WHERE product_id = ?",
+        "DbName": "products"
     }
 ]
