@@ -29,27 +29,20 @@
            transform transition
            hover:scale-105 hover:brightness-110
            focus:outline-none focus:ring-4 focus:ring-purple-300 mb-8">SQL</NuxtLink>
-    <NuxtLink v-for="id in Array.from({ length: meta.sqlProblemCount }, (_, i) => i)" :key="id" :to="`sql/${id}`">
+    <NuxtLink v-for="question in questions" :key="question.id" :to="`sql/${question.id}`">
         <br>
-        SQL問題{{ id }}
+        SQL問題{{ question.id }}
     </NuxtLink>
 </template>
 <script setup lang="ts">
 
 import { ref, onMounted } from 'vue'
+import { useSqlQuiz } from '~/composables/useSqlQuiz';
 
-let meta = ref({
-    sqlProblemCount: 0,
-})
-
-async function getMetaData() {
-    const res = await fetch('/meta.json')
-    const data = await res.json()
-    meta.value = data
-}
+const { questions, loadQuestions } = useSqlQuiz();
 
 onMounted(() => {
-    getMetaData()
+    loadQuestions();
 })
 
 </script>

@@ -1,11 +1,11 @@
 import { ref } from 'vue'
 
 export function useSqlQuiz() {
-    const questions = ref<{ question: string; answer: string; DbName: string }[]>([]) // Array of questions
+    const questions = ref<{ id: number; question: string; answer: string; DbName: string }[]>([]) // Array of questions
 
     async function loadQuestions() {
         // Load questions from an Internal Json file
-        const response = await fetch('../api/sqlQuestions')
+        const response = await fetch('/api/sqlQuestions')
         questions.value = await response.json()
     }
 

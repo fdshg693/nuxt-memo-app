@@ -24,6 +24,10 @@
             <div v-for="db in currentDbs" :key="db.name">
                 <DatabaseTable :db="db" />
             </div>
+            <div @click="resetDatabases"
+                class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
+                データベースをリセット
+            </div>
 
             <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading" />
 
@@ -60,12 +64,25 @@ import SqlEditor from '~/components/SqlEditor.vue';
 import ResultTable from '~/components/ResultTable.vue';
 import AnswerCheck from '~/components/AnswerCheck.vue';
 
+// Route params
+const route = useRoute()
+const index = ref(0)
+
+function setRouteParams() {
+    const id = route.params.id;
+    if (id == "") {
+        index.value = 0;
+    } else {
+        index.value = Number(id) - 1;
+    }
+}
+
 const nuxt = useNuxtApp();
 const $alasql = nuxt.$alasql as typeof import('alasql');
 
 // Quiz and DB composables
 const { questions, loadQuestions } = useSqlQuiz();
-const { databases, loadDatabases, getDatabaseByName } = useSqlDb();
+const { loadDatabases, getDatabaseByName } = useSqlDb();
 
 // State refs
 const sql = ref('');
@@ -82,17 +99,41 @@ const currentDbNames = ref<string[]>([]);
 // DB data
 const currentDbs = ref<any[]>([]);
 const userAnswerColumns = ref<string[]>([]);
+const dataBasesJson = ref<any[]>([]); // Make it reactive
 
 // Results
 const result = ref<Record<string, any>[]>([]);
 const correctResult = ref<Record<string, any>[]>([]);
 const sqlErrorDisplay = ref<string | null>(null);
 
-// Route params
-const route = useRoute()
-const index = ref(Number(route.params.id ?? 0))
+
+async function resetDatabases() {
+    // Fetch the latest DB JSON each time
+    dataBasesJson.value = await fetch('/api/sqlDatabases').then(res => res.json());
+    // ALASQLデータベースが存在しない場合は作成
+    if (!$alasql.databases.ALASQL) {
+        $alasql('CREATE DATABASE ALASQL; USE ALASQL;')
+    }
+    // メモリ上にテーブルを作成
+    dataBasesJson.value.forEach((tbl: any) => {
+        // 既にテーブルが存在する場合は削除
+        if ($alasql.databases.ALASQL.tables[tbl.name]) {
+            $alasql(`DROP TABLE ${tbl.name};`)
+        }
+        // CREATE TABLE 文を組み立て
+        const colsDef = tbl.columns.map((c: string) => `${c}`).join(',')
+        $alasql(`CREATE TABLE ${tbl.name} (${colsDef});`)
+        // データ挿入
+        tbl.rows.forEach((row: Record<string, any>) => {
+            const cols = Object.keys(row).join(',')
+            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
+            $alasql(`INSERT INTO ${tbl.name} (${cols}) VALUES (${vals});`)
+        })
+    })
+}
 
 function setCurrentQA() {
+    console.log(questions.value, index.value);
     if (questions.value.length > 0 && index.value >= 0 && index.value < questions.value.length) {
         currentQuestion.value = questions.value[index.value].question;
         currentAnswer.value = questions.value[index.value].answer;
@@ -142,6 +183,7 @@ function executeUserSQL() {
         sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${(error instanceof Error ? error.message : String(error))}`;
     }
     isCorrect.value = null;
+    sqlErrorDisplay.value = null;
 }
 
 async function askAI(userPrompt: string) {
@@ -175,7 +217,7 @@ async function askAI(userPrompt: string) {
     if (error.value) {
         aiErrorDisplay.value = 'AIからの応答に失敗しました。';
     } else {
-        aiAnswer.value = aiResponse.value;
+        aiAnswer.value = String(aiResponse.value ?? 'AIからの応答に失敗しました。');
     }
     isAiLoading.value = false;
     console.log('AIの応答:', aiResponse.value);
@@ -209,7 +251,9 @@ watch([questions, index], setCurrentQA);
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
+    await resetDatabases(); // Ensure DBs are loaded on mount
     setCurrentQA();
+    setRouteParams();
 });
 </script>
 
