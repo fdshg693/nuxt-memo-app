@@ -44,7 +44,7 @@ const onSubmit = async () => {
         // トークンを保存
         setToken(res.token);
         // ページ遷移を確実に待つ
-        await router.replace('/sql');
+        await router.push('/janken');
     } catch (err: any) {
         error.value = err?.data?.message || 'ログインに失敗しました';
     }

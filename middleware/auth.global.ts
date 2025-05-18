@@ -5,8 +5,8 @@ import { useAuth } from '~/composables/useAuth';
 export default defineNuxtRouteMiddleware((to, from) => {
     const { isLoggedIn } = useAuth();
 
-    // ログインしていない状態で /sql など保護ルートにアクセスしたら /login へリダイレクト
-    if (!isLoggedIn.value && to.path.startsWith('/fake')) {
+    // ログインしていない状態で /janken など保護ルートにアクセスしたら /login へリダイレクト
+    if (!isLoggedIn.value && to.path.startsWith('/janken')) {
         return navigateTo('/login');
     }
 });
