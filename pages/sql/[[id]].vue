@@ -24,7 +24,7 @@
 
             <DatabaseTable :db-name="currentDbName" :columns="allColumns" :rows="allRows" />
 
-            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" />
+            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading" />
 
             <div v-if="aiAnswer || aiErrorDisplay" class="mb-4">
                 <div v-if="aiAnswer"
@@ -71,6 +71,7 @@ const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
 const aiErrorDisplay = ref<string | null>(null);
 const aiAnswer = ref<string>('');
+const isAiLoading = ref(false);
 
 // Current question/answer/db
 const currentQuestion = ref('');
@@ -150,16 +151,21 @@ function executeUserSQL() {
 }
 
 async function askAI(userPrompt: string) {
+    isAiLoading.value = true;
+    aiErrorDisplay.value = null;
+    aiAnswer.value = '';
     const prompt = `
             あなたはSQL教師です。
             SQLクエリと問題文が与えられます。
             あなたの役割は、SQLに関するユーザの質問に答えることです。
-            ユーザの質問: ${userPrompt}
+            -----------------            
             問題文: ${currentQuestion.value}
             データベース名: ${currentDbName.value}
             カラム名: ${allColumns.value.join(', ')}
             データベースの内容: ${JSON.stringify(allRows.value)}
+            ユーザの質問: ${userPrompt}
             ユーザの入力したSQLクエリ: ${sql.value}
+            -----------------
             `;
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
@@ -170,6 +176,7 @@ async function askAI(userPrompt: string) {
     } else {
         aiAnswer.value = aiResponse.value;
     }
+    isAiLoading.value = false;
 }
 
 function executeAnswerSQL() {
