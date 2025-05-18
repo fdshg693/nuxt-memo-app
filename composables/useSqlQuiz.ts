@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 
-export function useQuiz() {
+export function useSqlQuiz() {
     const questions = ref<{ question: string; answer: string; DbName: string }[]>([]) // Array of questions
 
     async function loadQuestions() {

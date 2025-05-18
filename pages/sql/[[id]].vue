@@ -51,7 +51,7 @@
 import { ref, watch, onMounted, toRaw } from 'vue';
 import { useRoute } from 'vue-router'
 import isEqual from 'lodash/isEqual';
-import { useQuiz } from '~/composables/useSqlQuiz';
+import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
 import { useNuxtApp } from '#app';
 import QuestionNavigation from '~/components/QuestionNavigation.vue';
@@ -64,7 +64,7 @@ const nuxt = useNuxtApp();
 const $alasql = nuxt.$alasql as typeof import('alasql');
 
 // Quiz and DB composables
-const { questions, loadQuestions } = useQuiz();
+const { questions, loadQuestions } = useSqlQuiz();
 const { databases, loadDatabases, getDatabaseByName } = useSqlDb();
 
 // State refs
