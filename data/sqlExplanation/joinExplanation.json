@@ -1,0 +1,28 @@
+[
+    {
+        "title": "JOIN句の詳細解説",
+        "description": "JOIN句は、複数のテーブルを結合し、関連するデータをまとめて取得するためのSQL文です。ON句で結合条件を指定し、INNER JOINやLEFT JOINなどの種類もあります。",
+        "examples": [
+            {
+                "example": "SELECT users.name, orders.total_amount FROM users JOIN orders ON users.id = orders.user_id;",
+                "explanation": "usersテーブルとordersテーブルをuser_idで結合し、ユーザー名と注文金額を取得する。",
+                "DbName": "users, orders"
+            },
+            {
+                "example": "SELECT customers.name, orders.total_amount FROM customers JOIN orders ON customers.id = orders.user_id;",
+                "explanation": "customersテーブルとordersテーブルを顧客IDで結合し、顧客名と注文金額を取得する。",
+                "DbName": "customers, orders"
+            },
+            {
+                "example": "SELECT users.name, products.product_name FROM users JOIN orders ON users.id = orders.user_id JOIN products ON orders.id = products.id;",
+                "explanation": "users、orders、productsの3つのテーブルを結合し、ユーザー名と商品名を取得する（例としてorders.id=products.idで結合）。",
+                "DbName": "users, orders, products"
+            },
+            {
+                "example": "SELECT customers.name, COUNT(orders.id) FROM customers LEFT JOIN orders ON customers.id = orders.user_id GROUP BY customers.name;",
+                "explanation": "customersテーブルとordersテーブルをLEFT JOINで結合し、顧客ごとの注文数を集計する。",
+                "DbName": "customers, orders"
+            }
+        ]
+    }
+]

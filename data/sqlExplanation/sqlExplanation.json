@@ -23,5 +23,25 @@
         "keyword": "JOIN",
         "title": "テーブルの結合 (JOIN)",
         "description": "JOIN句は、複数のテーブルを結合してデータを取得するために使用します。例: SELECT * FROM テーブルA JOIN テーブルB ON テーブルA.id = テーブルB.a_id;"
+    },
+    {
+        "keyword": "WHERE",
+        "title": "条件指定 (WHERE)",
+        "description": "WHERE句は、指定した条件に一致するデータだけを取得・更新・削除するために使用します。例: SELECT * FROM テーブル名 WHERE カラム名 = 値;"
+    },
+    {
+        "keyword": "GROUPBY",
+        "title": "グループ化 (GROUP BY)",
+        "description": "GROUP BY句は、指定したカラムの値ごとにデータをグループ化して集計するために使用します。例: SELECT カラム名, COUNT(*) FROM テーブル名 GROUP BY カラム名;"
+    },
+    {
+        "keyword": "ORDERBY",
+        "title": "並び替え (ORDER BY)",
+        "description": "ORDER BY句は、取得したデータを指定したカラムで昇順または降順に並び替えるために使用します。例: SELECT * FROM テーブル名 ORDER BY カラム名 DESC;"
+    },
+    {
+        "keyword": "COUNT",
+        "title": "件数の集計 (COUNT)",
+        "description": "COUNT関数は、指定したカラムや全体の行数を数えるために使用します。例: SELECT COUNT(*) FROM テーブル名;"
     }
 ]

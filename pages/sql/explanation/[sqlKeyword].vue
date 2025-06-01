@@ -1,4 +1,6 @@
 <template>
+    <NuxtLink to="/" class="btn-gradient">トップ</NuxtLink>
+    <NuxtLink to="/sql/explanation" class="btn-gradient">SQL解説</NuxtLink>
     <div v-if="Array.isArray(explanation) && explanation.length > 0">
         <h1>{{ explanation[0].title }}</h1>
         <p>{{ explanation[0].description }}</p>
@@ -25,11 +27,20 @@ import { useRoute } from 'vue-router'
 import DatabaseTable from '~/components/DatabaseTable.vue'
 import ResultTable from '~/components/ResultTable.vue';
 
-import selectExplanation from '~/data/sqlExplanation/selectExplanation.json'
-import whereExplanation from '~/data/sqlExplanation/whereExplanation.json'
 import databasesJson from '@/data/sqlDatabases.json'
 
 import { useNuxtApp } from '#app';
+
+// explanationMapをimport.meta.globで一括取得
+const modules = import.meta.glob('~/data/sqlExplanation/*.json', { eager: true });
+const explanationMap: Record<string, any> = {};
+for (const path in modules) {
+    const key = path.split('/').pop()?.replace('Explanation.json', '').toLowerCase();
+    if (key) {
+        const mod = modules[path];
+        explanationMap[key] = mod && typeof mod === 'object' && 'default' in mod ? mod.default : mod;
+    }
+}
 
 const route = useRoute()
 const keyword = route.params.sqlKeyword as string
@@ -40,11 +51,8 @@ const $alasql = nuxt.$alasql as typeof import('alasql');
 const resultColumns = ref<string[][]>([]);
 const resultRecords = ref<Record<string, any>[][]>([]);
 
-const explanationMap: Record<string, any> = {
-    select: selectExplanation,
-    where: whereExplanation,
-}
-
+console.log('explanationMap:', explanationMap);
+console.log('keyword:', keyword);
 const explanation = Array.isArray(explanationMap[keyword.toLowerCase()]) ? explanationMap[keyword.toLowerCase()] : null
 
 function getDbByName(name: string) {

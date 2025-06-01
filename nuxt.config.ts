@@ -15,5 +15,8 @@ export default defineNuxtConfig({
     public: {
       apiKey: process.env.NUXT_PUBLIC_API_KEY
     }
-  }
+  },
+  plugins: [
+    '~/plugins/global-css.ts',
+  ],
 })
