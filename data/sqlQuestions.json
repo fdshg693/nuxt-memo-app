@@ -1,6 +1,7 @@
 [
     {
         "id": 1,
+        "level": 1,
         "genre": "SELECT",
         "question": "ユーザーの名前を取得する",
         "answer": "SELECT name FROM users",
@@ -8,6 +9,7 @@
     },
     {
         "id": 2,
+        "level": 1,
         "genre": "SELECT",
         "question": "お客さんの年齢を取得する",
         "answer": "SELECT age FROM customers",
@@ -15,6 +17,7 @@
     },
     {
         "id": 3,
+        "level": 1,
         "genre": "SELECT",
         "question": "商品名を取得する",
         "answer": "SELECT product_name FROM products",
@@ -22,6 +25,7 @@
     },
     {
         "id": 4,
+        "level": 1,
         "genre": "INSERT",
         "question": "以下のユーザーを追加する: (4, 'Bob', 30)",
         "answer": "INSERT INTO users (id, name, age) VALUES (4, 'Bob', 30)",
@@ -29,13 +33,16 @@
     },
     {
         "id": 5,
+        "level": 1,
         "genre": "SELECT",
+        "subgenre": "AGGREGATE",
         "question": "注文の合計金額を取得する",
         "answer": "SELECT SUM(total_amount) FROM orders",
         "DbName": "orders"
     },
     {
         "id": 6,
+        "level": 1,
         "genre": "SELECT",
         "question": "Aliceのメールアドレスを取得する",
         "answer": "SELECT email FROM users WHERE name = 'Alice'",
@@ -43,13 +50,16 @@
     },
     {
         "id": 7,
+        "level": 2,
         "genre": "SELECT",
+        "subgenre": "JOIN",
         "question": "INNER JOINを使用して、ユーザーと注文の情報を結合する",
         "answer": "SELECT users.name, orders.total_amount FROM users INNER JOIN orders ON users.id = orders.user_id",
         "DbName": "users,orders"
     },
     {
         "id": 8,
+        "level": 1,
         "genre": "SELECT",
         "question": "Laptopの在庫数を取得する",
         "answer": "SELECT stock FROM products WHERE product_name = 'Laptop'",

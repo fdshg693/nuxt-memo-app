@@ -1,0 +1,27 @@
+[
+    {
+        "keyword": "SELECT",
+        "title": "データの取得 (SELECT)",
+        "description": "SELECT文は、データベースからデータを取得するために使用します。例: SELECT * FROM テーブル名;"
+    },
+    {
+        "keyword": "INSERT",
+        "title": "データの追加 (INSERT)",
+        "description": "INSERT文は、テーブルに新しいデータを追加するために使用します。例: INSERT INTO テーブル名 (カラム1, カラム2) VALUES (値1, 値2);"
+    },
+    {
+        "keyword": "UPDATE",
+        "title": "データの更新 (UPDATE)",
+        "description": "UPDATE文は、既存のデータを更新するために使用します。例: UPDATE テーブル名 SET カラム1=値1 WHERE 条件;"
+    },
+    {
+        "keyword": "DELETE",
+        "title": "データの削除 (DELETE)",
+        "description": "DELETE文は、テーブルからデータを削除するために使用します。例: DELETE FROM テーブル名 WHERE 条件;"
+    },
+    {
+        "keyword": "JOIN",
+        "title": "テーブルの結合 (JOIN)",
+        "description": "JOIN句は、複数のテーブルを結合してデータを取得するために使用します。例: SELECT * FROM テーブルA JOIN テーブルB ON テーブルA.id = テーブルB.a_id;"
+    }
+]

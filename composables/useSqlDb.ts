@@ -1,12 +1,12 @@
 import { ref } from 'vue';
+import sqlDatabases from '@/data/sqlDatabases.json'
 
 export function useSqlDb() {
     const databases = ref<any[]>([]);
 
     async function loadDatabases() {
         // Load databases from an Internal Json file
-        const response = await fetch('../api/sqlDatabases')
-        databases.value = await response.json()
+        databases.value = sqlDatabases
     }
 
     function getDatabaseByName(name: string) {

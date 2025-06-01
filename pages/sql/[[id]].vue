@@ -65,6 +65,7 @@ import DatabaseTable from '~/components/DatabaseTable.vue';
 import SqlEditor from '~/components/SqlEditor.vue';
 import ResultTable from '~/components/ResultTable.vue';
 import AnswerCheck from '~/components/AnswerCheck.vue';
+import databasesJson from '@/data/sqlDatabases.json'
 
 // Route params
 const route = useRoute()
@@ -73,9 +74,9 @@ const index = ref(0)
 function setRouteParams() {
     const id = route.params.id;
     if (id == "") {
-        index.value = 0;
+        index.value = 1;
     } else {
-        index.value = Number(id) - 1;
+        index.value = Number(id);
     }
 }
 
@@ -101,7 +102,6 @@ const currentDbNames = ref<string[]>([]);
 // DB data
 const currentDbs = ref<any[]>([]);
 const userAnswerColumns = ref<string[]>([]);
-const dataBasesJson = ref<any[]>([]); // Make it reactive
 
 // Results
 const result = ref<Record<string, any>[]>([]);
@@ -110,14 +110,12 @@ const sqlErrorDisplay = ref<string | null>(null);
 
 
 async function resetDatabases() {
-    // Fetch the latest DB JSON each time
-    dataBasesJson.value = await fetch('/api/sqlDatabases').then(res => res.json());
     // ALASQLデータベースが存在しない場合は作成
     if (!$alasql.databases.ALASQL) {
         $alasql('CREATE DATABASE ALASQL; USE ALASQL;')
     }
     // メモリ上にテーブルを作成
-    dataBasesJson.value.forEach((tbl: any) => {
+    databasesJson.forEach((tbl: any) => {
         // 既にテーブルが存在する場合は削除
         if ($alasql.databases.ALASQL.tables[tbl.name]) {
             $alasql(`DROP TABLE ${tbl.name};`)
@@ -137,9 +135,12 @@ async function resetDatabases() {
 function setCurrentQA() {
     console.log(questions.value, index.value);
     if (questions.value.length > 0 && index.value >= 0 && index.value < questions.value.length) {
-        currentQuestion.value = questions.value[index.value].question;
-        currentAnswer.value = questions.value[index.value].answer;
-        currentDbNames.value = questions.value[index.value].DbName.split(',');
+        // get current question from id
+        const questionSet = questions.value.find(q => q.id === (index.value));
+        console.log('Current Question Set:', questionSet);
+        currentQuestion.value = questionSet.question;
+        currentAnswer.value = questionSet.answer;
+        currentDbNames.value = questionSet.DbName.split(',');
 
         // Load the current database schema
         currentDbs.value = currentDbNames.value.map(dbName => getDatabaseByName(dbName));
@@ -254,8 +255,8 @@ onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
     await resetDatabases(); // Ensure DBs are loaded on mount
-    setCurrentQA();
     setRouteParams();
+    setCurrentQA();
 });
 </script>
 
