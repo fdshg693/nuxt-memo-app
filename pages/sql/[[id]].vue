@@ -26,7 +26,7 @@
                     </div>
                 </div>
             </div>
-            <div @click="createCopyTables"
+            <div @click="createUserCopyTables"
                 class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
                 データベースをリセット
             </div>
@@ -61,6 +61,7 @@ import { useNuxtApp } from '#app';
 
 import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
+import { useSqlTableUtils } from '~/composables/useSqlTableUtils';
 
 import QuestionNavigation from '~/components/QuestionNavigation.vue';
 import DatabaseTable from '~/components/DatabaseTable.vue';
@@ -68,77 +69,78 @@ import SqlEditor from '~/components/SqlEditor.vue';
 import ResultTable from '~/components/ResultTable.vue';
 import AnswerCheck from '~/components/AnswerCheck.vue';
 
-import databasesJson from '@/data/sqlDatabases.json'
-
 // 型定義
+defineProps();
+
 interface Table {
     name: string;
     columns: string[];
     rows: Record<string, any>[];
 }
 
-// Route params
-const route = useRoute()
-const index = ref(1)
-
-function setRouteParams() {
-    const id = route.params.id;
-    if (id == "") {
-        index.value = 1;
-    } else {
-        index.value = Number(id);
-    }
-}
-
+// ===== Composables & Nuxt App =====
+const route = useRoute();
 const nuxt = useNuxtApp();
 const $alasql = nuxt.$alasql as typeof import('alasql');
-
-// Quiz and DB composables
 const { questions, loadQuestions } = useSqlQuiz();
 const { loadDatabases, getDatabaseByName } = useSqlDb();
 
-// State refs
+// ===== State =====
+// ルーティング・インデックス
+const index = ref(1);
+
+// SQL・AI・判定関連
 const sql = ref('');
 const isCorrect = ref<boolean | null>(null);
 const aiErrorDisplay = ref<string | null>(null);
 const aiAnswer = ref<string>('');
 const isAiLoading = ref(false);
+const sqlErrorDisplay = ref<string | null>(null);
 
-// Current QAまとめて管理
+// 結果・カラム
+const userAnswerColumns = ref<string[]>([]);
+const result = ref<Record<string, any>[]>([]);
+const correctResult = ref<Record<string, any>[]>([]);
+
+// 現在のQA・DB情報
 const currentQA = ref({
     question: '',
     answer: '',
+    showRecordsSql: '',
     dbNames: [] as string[],
-    dbs: [] as any[],
+    dbs: [] as Table[],
     genre: [] as string[],
 });
 
-// DB data
-const userAnswerColumns = ref<string[]>([]);
+// ===== DBユーティリティ =====
+const { createCopyTables, executeSQLWithTablePostfix } = useSqlTableUtils($alasql);
 
-// Results
-const result = ref<Record<string, any>[]>([]);
-const correctResult = ref<Record<string, any>[]>([]);
-const sqlErrorDisplay = ref<string | null>(null);
+// ===== Utility Functions =====
+function setRouteParams() {
+    const id = route.params.id;
+    index.value = id == '' ? 1 : Number(id);
+}
 
-async function createCopyTables() {
-    // テーブルを初期化
-    (databasesJson as Table[]).forEach(tbl => {
-        // コピー用テーブル削除
-        const userTableName = `${tbl.name}_user`;
-        if ($alasql.databases.ALASQL.tables[userTableName]) {
-            $alasql(`DROP TABLE ${userTableName};`);
-        }
-        // コピー用テーブル作成
-        const colsDef = tbl.columns.join(',');
-        $alasql(`CREATE TABLE ${userTableName} (${colsDef});`);
-        // データ挿入
-        tbl.rows.forEach((row: Record<string, any>) => {
-            const cols = Object.keys(row).join(',')
-            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
-            $alasql(`INSERT INTO ${userTableName} (${cols}) VALUES (${vals});`)
-        })
-    });
+function resetSqlAndAi() {
+    sql.value = '';
+    aiErrorDisplay.value = null;
+    aiAnswer.value = '';
+    isAiLoading.value = false;
+    isCorrect.value = null;
+    userAnswerColumns.value = [];
+    result.value = [];
+    correctResult.value = [];
+}
+
+function setNoQuestion() {
+    currentQA.value = {
+        question: '問題が見つかりません',
+        answer: '',
+        dbNames: [],
+        dbs: [],
+        genre: [],
+        showRecordsSql: '',
+    };
 }
 
 function setCurrentQA() {
@@ -150,62 +152,29 @@ function setCurrentQA() {
                 question: questionSet.question,
                 answer: questionSet.answer,
                 dbNames: questionSet.DbName.split(','),
-                dbs: questionSet.DbName.split(',').map(getDatabaseByName).filter(Boolean), // undefinedを除外
+                dbs: questionSet.DbName.split(',').map(getDatabaseByName).filter(Boolean),
                 genre: Array.isArray(questionSet.genre) ? questionSet.genre : (questionSet.genre ? [questionSet.genre] : []),
+                showRecordsSql: questionSet.showRecordsSql || '',
             };
-            console.log('Current QA:', currentQA.value.dbs.map(db => db.name));
-        } else {
-            setNoQuestion();
+            return;
         }
-    } else {
-        setNoQuestion();
     }
+    setNoQuestion();
 }
 
-function setNoQuestion() {
-    currentQA.value = {
-        question: '問題が見つかりません',
-        answer: '',
-        dbNames: [],
-        dbs: [],
-        genre: [],
-    };
-}
-
-function prevQuestion() {
-    if (index.value > 0) {
-        index.value--;
-        setCurrentQA();
-        isCorrect.value = null;
-    }
-}
-function nextQuestion() {
-    if (index.value < questions.value.length - 1) {
-        index.value++;
-        setCurrentQA();
-        isCorrect.value = null;
-    }
-}
-
-function executeUserSQL() {
+// ===== DBテーブル操作 =====
+// ===== SQL実行・AI =====
+async function executeUserSQL() {
     sqlErrorDisplay.value = null;
     isCorrect.value = null;
     try {
         if (currentQA.value.dbs) {
-            // ユーザーSQL内のテーブル名を *_user に自動変換
-            let userSql = sql.value;
-            currentQA.value.dbNames.forEach(name => {
-                const re = new RegExp(`\\b${name}\\b`, 'g');
-                userSql = userSql.replace(re, `${name}_user`);
-            });
-            const res = $alasql(userSql);
-            if (Array.isArray(res)) {
-                result.value = res;
-                userAnswerColumns.value = res.length ? Object.keys(res[0]) : [];
-            } else {
-                result.value = [];
-                userAnswerColumns.value = [];
+            let { result: userRes, columns } = executeSQLWithTablePostfix(sql.value, 'user', currentQA.value.dbNames);
+            if (currentQA.value.showRecordsSql !== '') {
+                ({ result: userRes, columns } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'user', currentQA.value.dbNames));
             }
+            result.value = userRes;
+            userAnswerColumns.value = columns;
         } else {
             sqlErrorDisplay.value = 'データベースが見つかりません';
         }
@@ -213,9 +182,44 @@ function executeUserSQL() {
         result.value = [];
         userAnswerColumns.value = [];
         sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
+    } finally {
+        await createUserCopyTables();
     }
 }
 
+async function executeAnswerSQL() {
+    try {
+        if (currentQA.value.dbs) {
+            let { result: answerRes } = executeSQLWithTablePostfix(currentQA.value.answer, 'answer', currentQA.value.dbNames);
+            correctResult.value = answerRes;
+            if (currentQA.value.showRecordsSql !== '') {
+                ({ result: answerRes } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'answer', currentQA.value.dbNames));
+                correctResult.value = answerRes;
+            }
+        } else {
+            correctResult.value = [];
+        }
+    } catch (error) {
+        correctResult.value = [];
+    } finally {
+        await createAnswerCopyTables();
+    }
+}
+
+async function createUserCopyTables() {
+    await createCopyTables('user', currentQA.value.dbs);
+}
+
+async function createAnswerCopyTables() {
+    await createCopyTables('answer', currentQA.value.dbs);
+}
+
+function checkAnswer() {
+    executeAnswerSQL();
+    isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
+}
+
+// ===== AI回答 =====
 async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
@@ -237,32 +241,39 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = false;
 }
 
-function executeAnswerSQL() {
-    try {
-        if (currentQA.value.dbs) {
-            const res = $alasql(currentQA.value.answer);
-            correctResult.value = Array.isArray(res) ? res : [];
-        } else {
-            correctResult.value = [];
-        }
-    } catch (error) {
-        correctResult.value = [];
+// ===== ナビゲーション =====
+function prevQuestion() {
+    if (index.value > 0) {
+        index.value--;
+        setCurrentQA();
+        isCorrect.value = null;
+    }
+}
+function nextQuestion() {
+    if (index.value < questions.value.length - 1) {
+        index.value++;
+        setCurrentQA();
+        isCorrect.value = null;
     }
 }
 
-function checkAnswer() {
-    executeAnswerSQL();
-    isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
-}
-
-watch([questions, index], setCurrentQA);
+// ===== ウォッチ・初期化 =====
+watch([questions, index], async () => {
+    setCurrentQA();
+    resetSqlAndAi();
+    if (currentQA.value.dbs.length > 0) {
+        await createUserCopyTables();
+        await createAnswerCopyTables();
+    }
+});
 
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
-    await createCopyTables();
     setRouteParams();
     setCurrentQA();
+    await createUserCopyTables();
+    await createAnswerCopyTables();
 });
 </script>
 

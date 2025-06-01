@@ -7,6 +7,7 @@ export function useSqlQuiz() {
         id: number;
         question: string;
         answer: string;
+        showRecordsSql?: string;
         DbName: string;
         genre?: string;
         subgenre?: string;
