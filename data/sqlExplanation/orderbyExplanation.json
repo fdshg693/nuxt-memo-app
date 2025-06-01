@@ -1,0 +1,33 @@
+[
+    {
+        "title": "ORDER BY句の詳細解説",
+        "description": "ORDER BY句は、SELECT文で取得したデータを指定したカラムの値で並び替えるために使用します。ASC（昇順）やDESC（降順）を指定できます。複数カラムでの並び替えも可能です。",
+        "examples": [
+            {
+                "example": "SELECT * FROM users ORDER BY age ASC;",
+                "explanation": "usersテーブルのデータをageの昇順で取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT name FROM customers ORDER BY age DESC;",
+                "explanation": "customersテーブルからnameカラムを年齢の降順で取得する。",
+                "DbName": "customers"
+            },
+            {
+                "example": "SELECT * FROM products ORDER BY stock DESC, product_name ASC;",
+                "explanation": "productsテーブルのデータをstockの降順、同じstockの場合はproduct_nameの昇順で取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT * FROM orders ORDER BY total_amount;",
+                "explanation": "ordersテーブルのデータをtotal_amountの昇順で取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT * FROM users ORDER BY name;",
+                "explanation": "usersテーブルのデータをnameの昇順で取得する。",
+                "DbName": "users"
+            }
+        ]
+    }
+]

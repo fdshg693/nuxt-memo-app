@@ -1,0 +1,33 @@
+[
+    {
+        "title": "GROUP BY句の詳細解説",
+        "description": "GROUP BY句は、SELECT文で集計関数（COUNT, SUM, AVGなど）と組み合わせて、指定したカラムごとにデータをグループ化して集計するために使用します。HAVING句と組み合わせて集計結果の絞り込みも可能です。",
+        "examples": [
+            {
+                "example": "SELECT age, COUNT(*) FROM users GROUP BY age;",
+                "explanation": "usersテーブルのageごとに人数を集計して取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT product_name, SUM(stock) FROM products GROUP BY product_name;",
+                "explanation": "productsテーブルのproduct_nameごとに在庫数を合計して取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT user_id, AVG(total_amount) FROM orders GROUP BY user_id;",
+                "explanation": "ordersテーブルのuser_idごとに注文金額の平均を取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT age, COUNT(*) FROM customers GROUP BY age HAVING COUNT(*) > 1;",
+                "explanation": "customersテーブルのageごとに人数を集計し、2人以上の年齢のみ取得する。",
+                "DbName": "customers"
+            },
+            {
+                "example": "SELECT name, MAX(age) FROM users GROUP BY name;",
+                "explanation": "usersテーブルのnameごとに最大年齢を取得する。",
+                "DbName": "users"
+            }
+        ]
+    }
+]

@@ -25,3 +25,4 @@ export default defineNuxtPlugin((nuxtApp) => {
     // アプリ全体で this.$alasql から呼べるように
     nuxtApp.provide('alasql', alasql)
 })
+

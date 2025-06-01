@@ -1,0 +1,33 @@
+[
+    {
+        "title": "COUNT関数の詳細解説",
+        "description": "COUNT関数は、テーブル内の行数や特定条件に合致する件数を集計するためのSQL関数です。GROUP BY句やWHERE句と組み合わせることで、柔軟な集計が可能です。",
+        "examples": [
+            {
+                "example": "SELECT COUNT(*) FROM users;",
+                "explanation": "usersテーブルの全件数（ユーザー数）を取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT COUNT(*) FROM products WHERE stock > 10;",
+                "explanation": "productsテーブルから在庫(stock)が10より多い商品の件数を取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT age, COUNT(*) FROM users GROUP BY age;",
+                "explanation": "usersテーブルのageごとに人数を集計して取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT COUNT(*) FROM orders WHERE total_amount >= 150;",
+                "explanation": "ordersテーブルからtotal_amountが150以上の注文件数を取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT COUNT(*) FROM customers WHERE age >= 30;",
+                "explanation": "customersテーブルから30歳以上の顧客数を取得する。",
+                "DbName": "customers"
+            }
+        ]
+    }
+]

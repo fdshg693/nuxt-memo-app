@@ -1,0 +1,33 @@
+[
+    {
+        "title": "WHERE句の詳細解説",
+        "description": "WHERE句は、SELECT文などでデータを取得する際に、特定の条件に合致するデータだけを抽出するために使用します。複数の条件をANDやORで組み合わせたり、比較演算子やLIKE、INなどを使って柔軟な絞り込みが可能です。",
+        "examples": [
+            {
+                "example": "SELECT * FROM users WHERE age > 30;",
+                "explanation": "usersテーブルからageが30より大きいユーザーの全カラムを取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT name FROM customers WHERE age BETWEEN 30 AND 40;",
+                "explanation": "customersテーブルからageが30以上40以下の顧客のnameカラムを取得する。",
+                "DbName": "customers"
+            },
+            {
+                "example": "SELECT product_name FROM products WHERE stock = 10;",
+                "explanation": "productsテーブルからstockが10の商品名を取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT * FROM orders WHERE user_id = 2;",
+                "explanation": "ordersテーブルからuser_idが2の注文データを全て取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT name FROM users WHERE name LIKE 'A%';",
+                "explanation": "usersテーブルからnameがAで始まるユーザー名を取得する。",
+                "DbName": "users"
+            }
+        ]
+    }
+]

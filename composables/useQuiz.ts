@@ -1,4 +1,5 @@
 import { ref } from 'vue'
+import randomQuestions from '@/data/randomQuestions.json'
 
 export interface Question {
   id: number
@@ -18,8 +19,7 @@ export function useQuiz() {
    * JSONファイルから問題をロード
    */
   async function loadQuestions() {
-    const res = await fetch('/questions.json')
-    questions.value = await res.json()
+    questions.value = randomQuestions
   }
 
   /**
