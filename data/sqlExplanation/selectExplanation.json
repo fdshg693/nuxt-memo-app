@@ -1,0 +1,33 @@
+[
+    {
+        "title": "SELECT文の詳細解説",
+        "description": "SELECT文は、データベースから必要なデータを抽出するための最も基本的なSQL文です。WHERE句やORDER BY句、GROUP BY句などと組み合わせることで、条件に合致したデータや並び替え、集計など柔軟なデータ取得が可能です。",
+        "examples": [
+            {
+                "example": "SELECT name, age FROM users;",
+                "explanation": "usersテーブルからnameとageカラムの全データを取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT * FROM products WHERE stock > 10;",
+                "explanation": "productsテーブルからstockが10より大きい商品の全カラムを取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT user_id, total_amount FROM orders WHERE total_amount >= 150;",
+                "explanation": "ordersテーブルからtotal_amountが150以上の注文のuser_idとtotal_amountを取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT name FROM customers ORDER BY age DESC;",
+                "explanation": "customersテーブルからnameカラムを年齢の降順で取得する。",
+                "DbName": "customers"
+            },
+            {
+                "example": "SELECT age, COUNT(*) FROM users GROUP BY age;",
+                "explanation": "usersテーブルのageごとに人数を集計して取得する。",
+                "DbName": "users"
+            }
+        ]
+    }
+]

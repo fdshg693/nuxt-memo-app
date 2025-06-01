@@ -57,15 +57,25 @@
 import { ref, watch, onMounted, toRaw } from 'vue';
 import { useRoute } from 'vue-router'
 import isEqual from 'lodash/isEqual';
+import { useNuxtApp } from '#app';
+
 import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
-import { useNuxtApp } from '#app';
+
 import QuestionNavigation from '~/components/QuestionNavigation.vue';
 import DatabaseTable from '~/components/DatabaseTable.vue';
 import SqlEditor from '~/components/SqlEditor.vue';
 import ResultTable from '~/components/ResultTable.vue';
 import AnswerCheck from '~/components/AnswerCheck.vue';
+
 import databasesJson from '@/data/sqlDatabases.json'
+
+// 型定義
+interface Table {
+    name: string;
+    columns: string[];
+    rows: Record<string, any>[];
+}
 
 // Route params
 const route = useRoute()
@@ -112,43 +122,45 @@ const sqlErrorDisplay = ref<string | null>(null);
 async function resetDatabases() {
     // ALASQLデータベースが存在しない場合は作成
     if (!$alasql.databases.ALASQL) {
-        $alasql('CREATE DATABASE ALASQL; USE ALASQL;')
+        $alasql('CREATE DATABASE ALASQL; USE ALASQL;');
     }
-    // メモリ上にテーブルを作成
-    databasesJson.forEach((tbl: any) => {
-        // 既にテーブルが存在する場合は削除
+    // テーブルを初期化
+    (databasesJson as Table[]).forEach(tbl => {
         if ($alasql.databases.ALASQL.tables[tbl.name]) {
-            $alasql(`DROP TABLE ${tbl.name};`)
+            $alasql(`DROP TABLE ${tbl.name};`);
         }
-        // CREATE TABLE 文を組み立て
-        const colsDef = tbl.columns.map((c: string) => `${c}`).join(',')
-        $alasql(`CREATE TABLE ${tbl.name} (${colsDef});`)
-        // データ挿入
-        tbl.rows.forEach((row: Record<string, any>) => {
-            const cols = Object.keys(row).join(',')
-            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
-            $alasql(`INSERT INTO ${tbl.name} (${cols}) VALUES (${vals});`)
-        })
-    })
+        const colsDef = tbl.columns.join(',');
+        $alasql(`CREATE TABLE ${tbl.name} (${colsDef});`);
+        tbl.rows.forEach(row => {
+            const cols = Object.keys(row).join(',');
+            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',');
+            $alasql(`INSERT INTO ${tbl.name} (${cols}) VALUES (${vals});`);
+        });
+    });
 }
 
 function setCurrentQA() {
-    console.log(questions.value, index.value);
-    if (questions.value.length > 0 && index.value >= 0 && index.value < questions.value.length) {
-        // get current question from id
-        const questionSet = questions.value.find(q => q.id === (index.value));
-        console.log('Current Question Set:', questionSet);
-        currentQuestion.value = questionSet.question;
-        currentAnswer.value = questionSet.answer;
-        currentDbNames.value = questionSet.DbName.split(',');
-
-        // Load the current database schema
-        currentDbs.value = currentDbNames.value.map(dbName => getDatabaseByName(dbName));
+    const idx = index.value;
+    if (questions.value.length > 0 && idx >= 0 && idx < questions.value.length) {
+        const questionSet = questions.value.find(q => q.id === idx);
+        if (questionSet) {
+            currentQuestion.value = questionSet.question;
+            currentAnswer.value = questionSet.answer;
+            currentDbNames.value = questionSet.DbName.split(',');
+            currentDbs.value = currentDbNames.value.map(getDatabaseByName);
+        } else {
+            setNoQuestion();
+        }
     } else {
-        currentQuestion.value = '問題が見つかりません';
-        currentAnswer.value = '';
-        currentDbNames.value = [];
+        setNoQuestion();
     }
+}
+
+function setNoQuestion() {
+    currentQuestion.value = '問題が見つかりません';
+    currentAnswer.value = '';
+    currentDbNames.value = [];
+    currentDbs.value = [];
 }
 
 function nextQuestion() {
@@ -167,15 +179,17 @@ function prevQuestion() {
 }
 
 function executeUserSQL() {
+    sqlErrorDisplay.value = null;
+    isCorrect.value = null;
     try {
         if (currentDbs.value) {
             const res = $alasql(sql.value);
             if (Array.isArray(res)) {
-                result.value = res
-                userAnswerColumns.value = res.length ? Object.keys(res[0]) : []
+                result.value = res;
+                userAnswerColumns.value = res.length ? Object.keys(res[0]) : [];
             } else {
-                result.value = []
-                userAnswerColumns.value = []
+                result.value = [];
+                userAnswerColumns.value = [];
             }
         } else {
             sqlErrorDisplay.value = 'データベースが見つかりません';
@@ -183,36 +197,19 @@ function executeUserSQL() {
     } catch (error) {
         result.value = [];
         userAnswerColumns.value = [];
-        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${(error instanceof Error ? error.message : String(error))}`;
+        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
     }
-    isCorrect.value = null;
-    sqlErrorDisplay.value = null;
 }
 
 async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
     aiAnswer.value = '';
-    let databasesInfo = "";
-    for (const db of currentDbs.value) {
-        databasesInfo += `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n`;
-        for (const row of db.rows) {
-            databasesInfo += `${JSON.stringify(row)}\n`;
-        }
-    }
-    const prompt = `
-            あなたはSQL教師です。
-            SQLクエリと問題文が与えられます。
-            あなたの役割は、SQLに関するユーザの質問に答えることです。
-            -----------------            
-            問題文: ${currentQuestion.value}
-            正しいSQLクエリ: ${currentAnswer.value}
-            データベースの情報:
-            ${databasesInfo}
-            ユーザの質問: ${userPrompt}
-            ユーザの入力したSQLクエリ: ${sql.value}
-            -----------------
-            `;
+    let databasesInfo = currentDbs.value.map(db => {
+        const rows = db.rows.map((row: any) => JSON.stringify(row)).join('\n');
+        return `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n${rows}`;
+    }).join('\n');
+    const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQuestion.value}\n正しいSQLクエリ: ${currentAnswer.value}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
         body: { prompt },
@@ -223,23 +220,17 @@ async function askAI(userPrompt: string) {
         aiAnswer.value = String(aiResponse.value ?? 'AIからの応答に失敗しました。');
     }
     isAiLoading.value = false;
-    console.log('AIの応答:', aiResponse.value);
 }
 
 function executeAnswerSQL() {
     try {
         if (currentDbs.value) {
             const res = $alasql(currentAnswer.value);
-            if (Array.isArray(res)) {
-                correctResult.value = res
-            } else {
-                correctResult.value = []
-            }
+            correctResult.value = Array.isArray(res) ? res : [];
         } else {
-            console.error('Unexpected Correct Database not found');
+            correctResult.value = [];
         }
     } catch (error) {
-        console.error('Unexpected Correct SQL execution error:', error);
         correctResult.value = [];
     }
 }
@@ -254,7 +245,7 @@ watch([questions, index], setCurrentQA);
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
-    await resetDatabases(); // Ensure DBs are loaded on mount
+    await resetDatabases();
     setRouteParams();
     setCurrentQA();
 });
