@@ -27,6 +27,8 @@ import { useRoute } from 'vue-router'
 import DatabaseTable from '~/components/DatabaseTable.vue'
 import ResultTable from '~/components/ResultTable.vue';
 
+import { useSqlTableUtils } from '~/composables/useSqlTableUtils';
+
 import databasesJson from '@/data/sqlDatabases.json'
 
 import { useNuxtApp } from '#app';
@@ -48,6 +50,9 @@ const keyword = route.params.sqlKeyword as string
 const nuxt = useNuxtApp();
 const $alasql = nuxt.$alasql as typeof import('alasql');
 
+const { createCopyTables, executeSQLWithTablePostfix } = useSqlTableUtils($alasql);
+const { loadDatabases, getDatabaseByName } = useSqlDb();
+
 const resultColumns = ref<string[][]>([]);
 const resultRecords = ref<Record<string, any>[][]>([]);
 
@@ -58,15 +63,23 @@ function getDbByName(name: string) {
 }
 
 function executeSql(explanationIndex: number) {
+    const currentExample = explanation?.[0]?.examples?.[explanationIndex];
+    const currentDb = getDatabaseByName(currentExample?.DbName);
+    const postfix = explanationIndex.toString();
+    createCopyTables(postfix, [currentDb]);
     if (!explanation || !Array.isArray(explanation) || !explanation[0] || !Array.isArray(explanation[0].examples) || explanationIndex < 0 || explanationIndex >= explanation[0].examples.length) {
         console.error('無効なインデックスまたはデータです。');
         return;
     }
     try {
-        const res = $alasql(explanation[0].examples[explanationIndex].example);
-        if (Array.isArray(res)) {
-            resultRecords.value[explanationIndex] = res;
-            resultColumns.value[explanationIndex] = res.length ? Object.keys(res[0]) : [];
+        let { result: userRes } = executeSQLWithTablePostfix(currentExample?.example, postfix, [currentDb?.name]);
+        if (explanation[0].title.toLowerCase().includes("insert")) {
+            const selectSql = `SELECT * FROM ${currentDb?.name}`;
+            ({ result: userRes } = executeSQLWithTablePostfix(selectSql, postfix, [currentDb?.name]));
+        }
+        if (Array.isArray(userRes)) {
+            resultRecords.value[explanationIndex] = userRes;
+            resultColumns.value[explanationIndex] = userRes.length ? Object.keys(userRes[0]) : [];
         } else {
             resultRecords.value[explanationIndex] = [];
             resultColumns.value[explanationIndex] = [];
@@ -75,6 +88,10 @@ function executeSql(explanationIndex: number) {
         console.error('SQL実行中にエラーが発生しました。', error);
     }
 }
+
+onMounted(async () => {
+    await loadDatabases();
+});
 
 </script>
 

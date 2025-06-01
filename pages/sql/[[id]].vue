@@ -26,7 +26,7 @@
                     </div>
                 </div>
             </div>
-            <div @click="createCopyTables('user')"
+            <div @click="createUserCopyTables"
                 class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
                 データベースをリセット
             </div>
@@ -61,6 +61,7 @@ import { useNuxtApp } from '#app';
 
 import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
+import { useSqlTableUtils } from '~/composables/useSqlTableUtils';
 
 import QuestionNavigation from '~/components/QuestionNavigation.vue';
 import DatabaseTable from '~/components/DatabaseTable.vue';
@@ -111,6 +112,9 @@ const currentQA = ref({
     genre: [] as string[],
 });
 
+// ===== DBユーティリティ =====
+const { createCopyTables, executeSQLWithTablePostfix } = useSqlTableUtils($alasql);
+
 // ===== Utility Functions =====
 function setRouteParams() {
     const id = route.params.id;
@@ -159,51 +163,15 @@ function setCurrentQA() {
 }
 
 // ===== DBテーブル操作 =====
-async function createCopyTables(postfix: string) {
-    currentQA.value.dbs.forEach(tbl => {
-        const copyTableName = `${tbl.name}_${postfix}`;
-        if ($alasql.databases.ALASQL.tables[copyTableName]) {
-            $alasql(`DROP TABLE ${copyTableName};`);
-        }
-        const colsDef = tbl.columns.join(',');
-        $alasql(`CREATE TABLE ${copyTableName} (${colsDef});`);
-        tbl.rows.forEach((row: Record<string, any>) => {
-            const cols = Object.keys(row).join(',');
-            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',');
-            $alasql(`INSERT INTO ${copyTableName} (${cols}) VALUES (${vals});`);
-        });
-    });
-}
-
-function executeSQLWithTablePostfix(sqlText: string, postfix: string) {
-    let replacedSql = sqlText;
-    currentQA.value.dbNames.forEach(name => {
-        const re = new RegExp(`\\b${name}\\b`, 'g');
-        replacedSql = replacedSql.replace(re, `${name}_${postfix}`);
-    });
-    const res = $alasql(replacedSql);
-    if (Array.isArray(res)) {
-        return {
-            result: res,
-            columns: res.length ? Object.keys(res[0]) : []
-        };
-    } else {
-        return {
-            result: [],
-            columns: []
-        };
-    }
-}
-
 // ===== SQL実行・AI =====
 async function executeUserSQL() {
     sqlErrorDisplay.value = null;
     isCorrect.value = null;
     try {
         if (currentQA.value.dbs) {
-            let { result: userRes, columns } = executeSQLWithTablePostfix(sql.value, 'user');
+            let { result: userRes, columns } = executeSQLWithTablePostfix(sql.value, 'user', currentQA.value.dbNames);
             if (currentQA.value.showRecordsSql !== '') {
-                ({ result: userRes, columns } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'user'));
+                ({ result: userRes, columns } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'user', currentQA.value.dbNames));
             }
             result.value = userRes;
             userAnswerColumns.value = columns;
@@ -215,17 +183,17 @@ async function executeUserSQL() {
         userAnswerColumns.value = [];
         sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
     } finally {
-        await createCopyTables('user');
+        await createUserCopyTables();
     }
 }
 
 async function executeAnswerSQL() {
     try {
         if (currentQA.value.dbs) {
-            let { result: answerRes } = executeSQLWithTablePostfix(currentQA.value.answer, 'answer');
+            let { result: answerRes } = executeSQLWithTablePostfix(currentQA.value.answer, 'answer', currentQA.value.dbNames);
             correctResult.value = answerRes;
             if (currentQA.value.showRecordsSql !== '') {
-                ({ result: answerRes } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'answer'));
+                ({ result: answerRes } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'answer', currentQA.value.dbNames));
                 correctResult.value = answerRes;
             }
         } else {
@@ -234,8 +202,16 @@ async function executeAnswerSQL() {
     } catch (error) {
         correctResult.value = [];
     } finally {
-        await createCopyTables('answer');
+        await createAnswerCopyTables();
     }
+}
+
+async function createUserCopyTables() {
+    await createCopyTables('user', currentQA.value.dbs);
+}
+
+async function createAnswerCopyTables() {
+    await createCopyTables('answer', currentQA.value.dbs);
 }
 
 function checkAnswer() {
@@ -286,8 +262,8 @@ watch([questions, index], async () => {
     setCurrentQA();
     resetSqlAndAi();
     if (currentQA.value.dbs.length > 0) {
-        await createCopyTables('user');
-        await createCopyTables('answer');
+        await createUserCopyTables();
+        await createAnswerCopyTables();
     }
 });
 
@@ -296,8 +272,8 @@ onMounted(async () => {
     await loadDatabases();
     setRouteParams();
     setCurrentQA();
-    await createCopyTables('user');
-    await createCopyTables('answer');
+    await createUserCopyTables();
+    await createAnswerCopyTables();
 });
 </script>
 
