@@ -3,22 +3,30 @@
         class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-start py-8">
         <NuxtLink to="/" class="btn-gradient">トップ</NuxtLink>
         <NuxtLink to="/sql/explanation" class="btn-gradient">SQL解説</NuxtLink>
+        <p>関連するジャンルのSQL解説</p>
+        <div v-if="currentQA.genre && currentQA.genre.length" class="flex flex-wrap justify-center gap-4 mt-4">
+            <NuxtLink v-for="genre in currentQA.genre" :key="genre" :to="`/sql/explanation/${genre}`"
+                class="btn-gradient">{{ genre }}解説</NuxtLink>
+        </div>
+
         <h1
             class="text-3xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
             SQLの問題</h1>
         <div id="app" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-            <div v-if="currentQuestion" class="mb-4">
-                <h2 class="text-xl font-bold text-indigo-700 mb-2">{{ currentQuestion }}</h2>
+            <div v-if="currentQA.question" class="mb-4">
+                <h2 class="text-xl font-bold text-indigo-700 mb-2">{{ currentQA.question }}</h2>
             </div>
-
             <QuestionNavigation :index="index" :questions-length="questions.length" @prev="prevQuestion"
                 @next="nextQuestion" />
             <div class="flex flex-row flex-wrap gap-4 mb-4">
-                <div v-for="db in currentDbs" :key="db.name" class="flex-1 min-w-[250px]">
-                    <DatabaseTable :db="db" />
+                <div v-if="currentQA.dbs.length === 0" class="text-gray-500 text-sm">データベースが見つかりません</div>
+                <div v-else class="text-gray-500 text-sm">
+                    <div v-for="db in currentQA.dbs" :key="db.name" class="flex-1 min-w-[250px]">
+                        <DatabaseTable :db="db" />
+                    </div>
                 </div>
             </div>
-            <div @click="resetDatabases"
+            <div @click="createCopyTables"
                 class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
                 データベースをリセット
             </div>
@@ -40,7 +48,7 @@
                 {{ sqlErrorDisplay }}
             </div>
 
-            <AnswerCheck :is-correct="isCorrect" :current-answer="currentAnswer" @check="checkAnswer" />
+            <AnswerCheck :is-correct="isCorrect" :current-answer="currentQA.answer" @check="checkAnswer" />
         </div>
     </div>
 </template>
@@ -71,7 +79,7 @@ interface Table {
 
 // Route params
 const route = useRoute()
-const index = ref(0)
+const index = ref(1)
 
 function setRouteParams() {
     const id = route.params.id;
@@ -96,13 +104,16 @@ const aiErrorDisplay = ref<string | null>(null);
 const aiAnswer = ref<string>('');
 const isAiLoading = ref(false);
 
-// Current question/answer/db
-const currentQuestion = ref('');
-const currentAnswer = ref('');
-const currentDbNames = ref<string[]>([]);
+// Current QAまとめて管理
+const currentQA = ref({
+    question: '',
+    answer: '',
+    dbNames: [] as string[],
+    dbs: [] as any[],
+    genre: [] as string[],
+});
 
 // DB data
-const currentDbs = ref<any[]>([]);
 const userAnswerColumns = ref<string[]>([]);
 
 // Results
@@ -110,24 +121,23 @@ const result = ref<Record<string, any>[]>([]);
 const correctResult = ref<Record<string, any>[]>([]);
 const sqlErrorDisplay = ref<string | null>(null);
 
-
-async function resetDatabases() {
-    // ALASQLデータベースが存在しない場合は作成
-    if (!$alasql.databases.ALASQL) {
-        $alasql('CREATE DATABASE ALASQL; USE ALASQL;');
-    }
+async function createCopyTables() {
     // テーブルを初期化
     (databasesJson as Table[]).forEach(tbl => {
-        if ($alasql.databases.ALASQL.tables[tbl.name]) {
-            $alasql(`DROP TABLE ${tbl.name};`);
+        // コピー用テーブル削除
+        const userTableName = `${tbl.name}_user`;
+        if ($alasql.databases.ALASQL.tables[userTableName]) {
+            $alasql(`DROP TABLE ${userTableName};`);
         }
+        // コピー用テーブル作成
         const colsDef = tbl.columns.join(',');
-        $alasql(`CREATE TABLE ${tbl.name} (${colsDef});`);
-        tbl.rows.forEach(row => {
-            const cols = Object.keys(row).join(',');
-            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',');
-            $alasql(`INSERT INTO ${tbl.name} (${cols}) VALUES (${vals});`);
-        });
+        $alasql(`CREATE TABLE ${userTableName} (${colsDef});`);
+        // データ挿入
+        tbl.rows.forEach((row: Record<string, any>) => {
+            const cols = Object.keys(row).join(',')
+            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
+            $alasql(`INSERT INTO ${userTableName} (${cols}) VALUES (${vals});`)
+        })
     });
 }
 
@@ -136,10 +146,14 @@ function setCurrentQA() {
     if (questions.value.length > 0 && idx >= 0 && idx < questions.value.length) {
         const questionSet = questions.value.find(q => q.id === idx);
         if (questionSet) {
-            currentQuestion.value = questionSet.question;
-            currentAnswer.value = questionSet.answer;
-            currentDbNames.value = questionSet.DbName.split(',');
-            currentDbs.value = currentDbNames.value.map(getDatabaseByName);
+            currentQA.value = {
+                question: questionSet.question,
+                answer: questionSet.answer,
+                dbNames: questionSet.DbName.split(','),
+                dbs: questionSet.DbName.split(',').map(getDatabaseByName).filter(Boolean), // undefinedを除外
+                genre: Array.isArray(questionSet.genre) ? questionSet.genre : (questionSet.genre ? [questionSet.genre] : []),
+            };
+            console.log('Current QA:', currentQA.value.dbs.map(db => db.name));
         } else {
             setNoQuestion();
         }
@@ -149,22 +163,25 @@ function setCurrentQA() {
 }
 
 function setNoQuestion() {
-    currentQuestion.value = '問題が見つかりません';
-    currentAnswer.value = '';
-    currentDbNames.value = [];
-    currentDbs.value = [];
+    currentQA.value = {
+        question: '問題が見つかりません',
+        answer: '',
+        dbNames: [],
+        dbs: [],
+        genre: [],
+    };
 }
 
-function nextQuestion() {
-    if (index.value < questions.value.length - 1) {
-        index.value++;
+function prevQuestion() {
+    if (index.value > 0) {
+        index.value--;
         setCurrentQA();
         isCorrect.value = null;
     }
 }
-function prevQuestion() {
-    if (index.value > 0) {
-        index.value--;
+function nextQuestion() {
+    if (index.value < questions.value.length - 1) {
+        index.value++;
         setCurrentQA();
         isCorrect.value = null;
     }
@@ -174,8 +191,14 @@ function executeUserSQL() {
     sqlErrorDisplay.value = null;
     isCorrect.value = null;
     try {
-        if (currentDbs.value) {
-            const res = $alasql(sql.value);
+        if (currentQA.value.dbs) {
+            // ユーザーSQL内のテーブル名を *_user に自動変換
+            let userSql = sql.value;
+            currentQA.value.dbNames.forEach(name => {
+                const re = new RegExp(`\\b${name}\\b`, 'g');
+                userSql = userSql.replace(re, `${name}_user`);
+            });
+            const res = $alasql(userSql);
             if (Array.isArray(res)) {
                 result.value = res;
                 userAnswerColumns.value = res.length ? Object.keys(res[0]) : [];
@@ -197,11 +220,11 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
     aiAnswer.value = '';
-    let databasesInfo = currentDbs.value.map(db => {
+    let databasesInfo = currentQA.value.dbs.map(db => {
         const rows = db.rows.map((row: any) => JSON.stringify(row)).join('\n');
         return `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n${rows}`;
     }).join('\n');
-    const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQuestion.value}\n正しいSQLクエリ: ${currentAnswer.value}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
+    const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQA.value.question}\n正しいSQLクエリ: ${currentQA.value.answer}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
         body: { prompt },
@@ -216,8 +239,8 @@ async function askAI(userPrompt: string) {
 
 function executeAnswerSQL() {
     try {
-        if (currentDbs.value) {
-            const res = $alasql(currentAnswer.value);
+        if (currentQA.value.dbs) {
+            const res = $alasql(currentQA.value.answer);
             correctResult.value = Array.isArray(res) ? res : [];
         } else {
             correctResult.value = [];
@@ -237,7 +260,7 @@ watch([questions, index], setCurrentQA);
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
-    await resetDatabases();
+    await createCopyTables();
     setRouteParams();
     setCurrentQA();
 });
