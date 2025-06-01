@@ -26,7 +26,7 @@
                     </div>
                 </div>
             </div>
-            <div @click="createCopyTables"
+            <div @click="createCopyTables('user')"
                 class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
                 データベースをリセット
             </div>
@@ -109,7 +109,7 @@ const currentQA = ref({
     question: '',
     answer: '',
     dbNames: [] as string[],
-    dbs: [] as any[],
+    dbs: [] as Table[],
     genre: [] as string[],
 });
 
@@ -120,26 +120,6 @@ const userAnswerColumns = ref<string[]>([]);
 const result = ref<Record<string, any>[]>([]);
 const correctResult = ref<Record<string, any>[]>([]);
 const sqlErrorDisplay = ref<string | null>(null);
-
-async function createCopyTables() {
-    // テーブルを初期化
-    (databasesJson as Table[]).forEach(tbl => {
-        // コピー用テーブル削除
-        const userTableName = `${tbl.name}_user`;
-        if ($alasql.databases.ALASQL.tables[userTableName]) {
-            $alasql(`DROP TABLE ${userTableName};`);
-        }
-        // コピー用テーブル作成
-        const colsDef = tbl.columns.join(',');
-        $alasql(`CREATE TABLE ${userTableName} (${colsDef});`);
-        // データ挿入
-        tbl.rows.forEach((row: Record<string, any>) => {
-            const cols = Object.keys(row).join(',')
-            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
-            $alasql(`INSERT INTO ${userTableName} (${cols}) VALUES (${vals});`)
-        })
-    });
-}
 
 function setCurrentQA() {
     const idx = index.value;
@@ -187,35 +167,6 @@ function nextQuestion() {
     }
 }
 
-function executeUserSQL() {
-    sqlErrorDisplay.value = null;
-    isCorrect.value = null;
-    try {
-        if (currentQA.value.dbs) {
-            // ユーザーSQL内のテーブル名を *_user に自動変換
-            let userSql = sql.value;
-            currentQA.value.dbNames.forEach(name => {
-                const re = new RegExp(`\\b${name}\\b`, 'g');
-                userSql = userSql.replace(re, `${name}_user`);
-            });
-            const res = $alasql(userSql);
-            if (Array.isArray(res)) {
-                result.value = res;
-                userAnswerColumns.value = res.length ? Object.keys(res[0]) : [];
-            } else {
-                result.value = [];
-                userAnswerColumns.value = [];
-            }
-        } else {
-            sqlErrorDisplay.value = 'データベースが見つかりません';
-        }
-    } catch (error) {
-        result.value = [];
-        userAnswerColumns.value = [];
-        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
-    }
-}
-
 async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
@@ -237,10 +188,69 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = false;
 }
 
+// 初期化時にテーブルをコピーする
+// ユーザー用と回答用のテーブルを作成して、SQLの実行時に使用します。
+async function createCopyTables(postfix: string) {
+    // テーブルを初期化
+    currentQA.value.dbs.forEach(tbl => {
+        // コピー用テーブル削除
+        const copyTableName = `${tbl.name}_${postfix}`;
+        console.log(`Creating copy table: ${copyTableName}`);
+        if ($alasql.databases.ALASQL.tables[copyTableName]) {
+            $alasql(`DROP TABLE ${copyTableName};`);
+        }
+        // コピー用テーブル作成
+        const colsDef = tbl.columns.join(',');
+        $alasql(`CREATE TABLE ${copyTableName} (${colsDef});`);
+        // データ挿入
+        tbl.rows.forEach((row: Record<string, any>) => {
+            const cols = Object.keys(row).join(',')
+            const vals = Object.values(row).map(v => typeof v === 'string' ? `'${v}'` : v).join(',')
+            $alasql(`INSERT INTO ${copyTableName} (${cols}) VALUES (${vals});`)
+        })
+    });
+}
+
+function executeUserSQL() {
+    sqlErrorDisplay.value = null;
+    isCorrect.value = null;
+    try {
+        if (currentQA.value.dbs) {
+            // ユーザーSQL内のテーブル名を *_user に自動変換
+            let userSql = sql.value;
+            currentQA.value.dbNames.forEach(name => {
+                const re = new RegExp(`\\b${name}\\b`, 'g');
+                userSql = userSql.replace(re, `${name}_user`);
+            });
+            console.log('Executing user SQL:', userSql);
+            const res = $alasql(userSql);
+            if (Array.isArray(res)) {
+                result.value = res;
+                userAnswerColumns.value = res.length ? Object.keys(res[0]) : [];
+            } else {
+                result.value = [];
+                userAnswerColumns.value = [];
+            }
+        } else {
+            sqlErrorDisplay.value = 'データベースが見つかりません';
+        }
+    } catch (error) {
+        result.value = [];
+        userAnswerColumns.value = [];
+        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
+    }
+}
+
 function executeAnswerSQL() {
     try {
         if (currentQA.value.dbs) {
-            const res = $alasql(currentQA.value.answer);
+            // 回答用SQL内のテーブル名を *_answer に自動変換
+            let answerSql = currentQA.value.answer;
+            currentQA.value.dbNames.forEach(name => {
+                const re = new RegExp(`\\b${name}\\b`, 'g');
+                answerSql = answerSql.replace(re, `${name}_answer`);
+            });
+            const res = $alasql(answerSql);
             correctResult.value = Array.isArray(res) ? res : [];
         } else {
             correctResult.value = [];
@@ -260,9 +270,10 @@ watch([questions, index], setCurrentQA);
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
-    await createCopyTables();
     setRouteParams();
     setCurrentQA();
+    await createCopyTables("user");
+    await createCopyTables("answer");
 });
 </script>
 
