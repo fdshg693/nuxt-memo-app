@@ -27,8 +27,9 @@
         "id": 4,
         "level": 1,
         "genre": "INSERT",
-        "question": "以下のユーザーを追加する: (4, 'Bob', 30)",
-        "answer": "INSERT INTO users (id, name, age) VALUES (4, 'Bob', 30)",
+        "question": "以下のユーザーを追加する: (8, 'Hanna', 30)",
+        "answer": "INSERT INTO users (id, name, age) VALUES (8, 'Hanna', 30)",
+        "showRecordsSql": "SELECT * FROM users",
         "DbName": "users"
     },
     {

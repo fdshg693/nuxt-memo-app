@@ -51,8 +51,6 @@ const $alasql = nuxt.$alasql as typeof import('alasql');
 const resultColumns = ref<string[][]>([]);
 const resultRecords = ref<Record<string, any>[][]>([]);
 
-console.log('explanationMap:', explanationMap);
-console.log('keyword:', keyword);
 const explanation = Array.isArray(explanationMap[keyword.toLowerCase()]) ? explanationMap[keyword.toLowerCase()] : null
 
 function getDbByName(name: string) {
