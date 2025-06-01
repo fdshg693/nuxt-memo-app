@@ -1,6 +1,5 @@
 <template>
-    <div
-        class="min-h-[60vh] bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 flex items-center justify-center">
+    <div class="bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100 flex justify-center py-8">
         <div class="max-w-md w-full bg-white/90 shadow-2xl rounded-2xl p-8 border border-gray-200">
             <h2 class="text-2xl font-extrabold mb-6 text-center text-blue-700 tracking-wide drop-shadow">AIに質問</h2>
             <input v-model="question" type="text" placeholder="質問を入力してください"
@@ -9,7 +8,7 @@
                 class="w-full bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-3 rounded-xl font-semibold shadow-md hover:from-blue-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
                 <span class="inline-flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 17l4 4 4-4m0-5V3" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16l-4-4m4 4l4-4m-4 4V4" />
                     </svg>
                     質問する
                 </span>

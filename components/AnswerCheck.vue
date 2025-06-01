@@ -11,7 +11,7 @@
             <p class="font-semibold text-purple-700">解答例</p>
             <div v-if="currentAnswer">
                 <pre
-                    class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 text-sm text-indigo-900 mb-2 border border-purple-100">{{ currentAnswer }}</pre>
+                    class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-3 text-sm text-indigo-900 mb-2 border border-purple-100 whitespace-pre-wrap break-words">{{ currentAnswer }}</pre>
             </div>
             <p v-if="isCorrect === true" class="text-green-600 font-bold">✅ 正解です！</p>
             <p v-else-if="isCorrect === false" class="text-red-600 font-bold">❌ 不正解です</p>

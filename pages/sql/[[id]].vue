@@ -21,8 +21,10 @@
 
             <QuestionNavigation :index="index" :questions-length="questions.length" @prev="prevQuestion"
                 @next="nextQuestion" />
-            <div v-for="db in currentDbs" :key="db.name">
-                <DatabaseTable :db="db" />
+            <div class="flex flex-row flex-wrap gap-4 mb-4">
+                <div v-for="db in currentDbs" :key="db.name" class="flex-1 min-w-[250px]">
+                    <DatabaseTable :db="db" />
+                </div>
             </div>
             <div @click="resetDatabases"
                 class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">

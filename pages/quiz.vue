@@ -23,9 +23,9 @@
 <script setup lang="ts">
 import { onMounted } from 'vue'
 import { useQuiz } from '~/composables/useQuiz'
-import QuestionCard from '~/components/QuestionCard.vue'
-import RandomCalc from '~/components/RandomCalc.vue'
-import AIQuestion from '~/components/AIQuestion.vue'
+import QuestionCard from '~/components/random/QuestionCard.vue'
+import RandomCalc from '~/components/random/RandomCalc.vue'
+import AIQuestion from '~/components/random/AIQuestion.vue'
 
 const {
   questions,
