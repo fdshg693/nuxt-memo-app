@@ -31,10 +31,6 @@
                     </div>
                 </div>
             </div>
-            <div @click="createUserCopyTables"
-                class="text-sm text-gray-500 cursor-pointer mb-4 flex items-center justify-around">
-                データベースをリセット
-            </div>
 
             <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading"
                 :show-ai-prompt-modal="showAiPromptModal" />
@@ -117,6 +113,7 @@ const currentQA = ref({
     dbNames: [] as string[],
     dbs: [] as Table[],
     genre: [] as string[],
+    subgenre: [] as string[],
 });
 
 // ===== DBユーティリティ =====
@@ -147,6 +144,7 @@ function setNoQuestion() {
         dbs: [],
         genre: [],
         showRecordsSql: '',
+        subgenre: [],
     };
 }
 
@@ -162,6 +160,7 @@ function setCurrentQA() {
                 dbs: questionSet.DbName.split(',').map(getDatabaseByName).filter(Boolean),
                 genre: Array.isArray(questionSet.genre) ? questionSet.genre : (questionSet.genre ? [questionSet.genre] : []),
                 showRecordsSql: questionSet.showRecordsSql || '',
+                subgenre: Array.isArray(questionSet.subgenre) ? questionSet.subgenre : (questionSet.subgenre ? [questionSet.subgenre] : []),
             };
             return;
         }

@@ -43,5 +43,10 @@
         "keyword": "COUNT",
         "title": "件数の集計 (COUNT)",
         "description": "COUNT関数は、指定したカラムや全体の行数を数えるために使用します。例: SELECT COUNT(*) FROM テーブル名;"
+    },
+    {
+        "keyword": "SUM",
+        "title": "合計の集計 (SUM)",
+        "description": "SUM関数は、指定したカラムの数値の合計を計算するために使用します。例: SELECT SUM(カラム名) FROM テーブル名;"
     }
 ]

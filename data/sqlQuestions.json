@@ -36,7 +36,7 @@
         "id": 5,
         "level": 1,
         "genre": "SELECT",
-        "subgenre": "AGGREGATE",
+        "subgenre": "SUM",
         "question": "注文の合計金額を取得する",
         "answer": "SELECT SUM(total_amount) FROM orders",
         "DbName": "orders"

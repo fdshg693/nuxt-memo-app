@@ -1,0 +1,33 @@
+[
+    {
+        "title": "SUM関数の詳細解説",
+        "description": "SUM関数は、指定したカラムの合計値を計算するためのSQL関数です。GROUP BY句やWHERE句と組み合わせることで、特定条件下での合計値を集計できます。",
+        "examples": [
+            {
+                "example": "SELECT SUM(age) FROM users;",
+                "explanation": "usersテーブルのageカラムの合計値（全ユーザーの年齢合計）を取得する。",
+                "DbName": "users"
+            },
+            {
+                "example": "SELECT SUM(stock) FROM products;",
+                "explanation": "productsテーブルのstockカラムの合計値（全商品の在庫合計）を取得する。",
+                "DbName": "products"
+            },
+            {
+                "example": "SELECT user_id, SUM(total_amount) FROM orders GROUP BY user_id;",
+                "explanation": "ordersテーブルのuser_idごとにtotal_amountの合計を集計して取得する。",
+                "DbName": "orders"
+            },
+            {
+                "example": "SELECT SUM(age) FROM customers;",
+                "explanation": "customersテーブルのageカラムの合計値（全顧客の年齢合計）を取得する。",
+                "DbName": "customers"
+            },
+            {
+                "example": "SELECT SUM(stock) FROM products WHERE stock >= 10;",
+                "explanation": "productsテーブルから在庫数が10以上の商品stock合計を取得する。",
+                "DbName": "products"
+            }
+        ]
+    }
+]
