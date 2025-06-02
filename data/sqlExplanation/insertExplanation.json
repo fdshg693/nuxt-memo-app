@@ -4,13 +4,13 @@
         "description": "INSERT文は、テーブルに新しいデータを追加するためのSQL文です。VALUES句を使って各カラムに対応する値を指定します。複数行の追加や一部カラムのみの指定も可能です。",
         "examples": [
             {
-                "example": "INSERT INTO users (name, age) VALUES ('田中', 25);",
-                "explanation": "usersテーブルにnameが田中、ageが25の新しいレコードを追加する。",
+                "example": "INSERT INTO users (name, age) VALUES ('NEW GUY', 25);",
+                "explanation": "usersテーブルにnameがNEW GUY、ageが25の新しいレコードを追加する。",
                 "DbName": "users"
             },
             {
-                "example": "INSERT INTO products (product_name, stock) VALUES ('りんご', 50);",
-                "explanation": "productsテーブルにproduct_nameがりんご、stockが50のレコードを追加する。",
+                "example": "INSERT INTO products (product_name, stock) VALUES ('APPLE', 50);",
+                "explanation": "productsテーブルにproduct_nameがAPPLE、stockが50のレコードを追加する。",
                 "DbName": "products"
             },
             {
@@ -19,12 +19,12 @@
                 "DbName": "orders"
             },
             {
-                "example": "INSERT INTO customers (name, age) VALUES ('佐藤', 30), ('鈴木', 28);",
+                "example": "INSERT INTO customers (name, age) VALUES ('NEW GUY', 30), ('NEWER GUY', 28);",
                 "explanation": "customersテーブルに2件の顧客データを一度に追加する。",
                 "DbName": "customers"
             },
             {
-                "example": "INSERT INTO users (name) VALUES ('山本');",
+                "example": "INSERT INTO users (name) VALUES ('Yamamoto');",
                 "explanation": "usersテーブルにnameのみ指定して新しいユーザーを追加する（ageはNULLまたはデフォルト値）。",
                 "DbName": "users"
             }

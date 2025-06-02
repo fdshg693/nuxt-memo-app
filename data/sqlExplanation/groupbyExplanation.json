@@ -9,8 +9,8 @@
                 "DbName": "users"
             },
             {
-                "example": "SELECT product_name, SUM(stock) FROM products GROUP BY product_name;",
-                "explanation": "productsテーブルのproduct_nameごとに在庫数を合計して取得する。",
+                "example": "SELECT product_name, SUM(stock) FROM products GROUP BY stock;",
+                "explanation": "productsテーブルのstockごとに在庫数を合計して取得する。",
                 "DbName": "products"
             },
             {
@@ -24,9 +24,9 @@
                 "DbName": "customers"
             },
             {
-                "example": "SELECT name, MAX(age) FROM users GROUP BY name;",
-                "explanation": "usersテーブルのnameごとに最大年齢を取得する。",
-                "DbName": "users"
+                "example": "SELECT user_id, MAX(total_amount) FROM orders GROUP BY user_id;",
+                "explanation": "ordersテーブルのuser_idごとに最大注文金額を取得する。",
+                "DbName": "orders"
             }
         ]
     }

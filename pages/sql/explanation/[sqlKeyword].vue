@@ -66,6 +66,7 @@ function executeSql(explanationIndex: number) {
     const currentExample = explanation?.[0]?.examples?.[explanationIndex];
     const currentDb = getDatabaseByName(currentExample?.DbName);
     const postfix = explanationIndex.toString();
+    // テーブルのコピーを作成。また、これによって初期化を行う
     createCopyTables(postfix, [currentDb]);
     if (!explanation || !Array.isArray(explanation) || !explanation[0] || !Array.isArray(explanation[0].examples) || explanationIndex < 0 || explanationIndex >= explanation[0].examples.length) {
         console.error('無効なインデックスまたはデータです。');
@@ -73,7 +74,7 @@ function executeSql(explanationIndex: number) {
     }
     try {
         let { result: userRes } = executeSQLWithTablePostfix(currentExample?.example, postfix, [currentDb?.name]);
-        if (explanation[0].title.toLowerCase().includes("insert")) {
+        if (["insert", "update", "delete"].some((action) => explanation[0].title.toLowerCase().includes(action))) {
             const selectSql = `SELECT * FROM ${currentDb?.name}`;
             ({ result: userRes } = executeSQLWithTablePostfix(selectSql, postfix, [currentDb?.name]));
         }

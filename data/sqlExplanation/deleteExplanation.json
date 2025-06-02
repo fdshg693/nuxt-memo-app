@@ -4,8 +4,8 @@
         "description": "DELETE文は、テーブルからデータを削除するためのSQL文です。WHERE句で削除対象を指定します。WHERE句を省略すると全レコードが削除されるため注意が必要です。",
         "examples": [
             {
-                "example": "DELETE FROM users WHERE age < 20;",
-                "explanation": "usersテーブルからageが20未満のユーザーを削除する。",
+                "example": "DELETE FROM users WHERE age < 30;",
+                "explanation": "usersテーブルからageが30未満のユーザーを削除する。",
                 "DbName": "users"
             },
             {
@@ -19,13 +19,13 @@
                 "DbName": "orders"
             },
             {
-                "example": "DELETE FROM customers WHERE name = '佐藤';",
-                "explanation": "customersテーブルからnameが佐藤の顧客を削除する。",
+                "example": "DELETE FROM customers WHERE name = 'David';",
+                "explanation": "customersテーブルからnameがDavidの顧客を削除する。",
                 "DbName": "customers"
             },
             {
-                "example": "DELETE FROM users;",
-                "explanation": "usersテーブルの全データを削除する（全件削除）。",
+                "example": "DELETE FROM users WHERE age < 30 AND name = 'Alice';",
+                "explanation": "usersテーブルからageが30未満でnameがAliceのユーザーを削除する。",
                 "DbName": "users"
             }
         ]
