@@ -4,18 +4,18 @@
         "description": "UPDATE文は、既存のデータを変更するためのSQL文です。SET句で変更内容を指定し、WHERE句で対象レコードを絞り込みます。WHERE句を省略すると全レコードが更新されるため注意が必要です。",
         "examples": [
             {
-                "example": "UPDATE users SET age = 26 WHERE name = '田中';",
-                "explanation": "usersテーブルでnameが田中のユーザーのageを26に更新する。",
+                "example": "UPDATE users SET age = 26 WHERE name = 'Bob';",
+                "explanation": "usersテーブルでnameがBobのユーザーのageを26に更新する。",
                 "DbName": "users"
             },
             {
-                "example": "UPDATE products SET stock = stock - 1 WHERE product_name = 'りんご';",
-                "explanation": "productsテーブルでproduct_nameがりんごの商品のstockを1減らす。",
+                "example": "UPDATE products SET stock = stock - 1 WHERE product_name = 'Laptop';",
+                "explanation": "productsテーブルでproduct_nameがLaptopの商品のstockを1減らす。",
                 "DbName": "products"
             },
             {
-                "example": "UPDATE orders SET total_amount = 300 WHERE user_id = 1;",
-                "explanation": "ordersテーブルでuser_idが1の注文のtotal_amountを300に変更する。",
+                "example": "UPDATE orders SET total_amount = 300 WHERE id = 1;",
+                "explanation": "ordersテーブルでidが1の注文のtotal_amountを300に変更する。",
                 "DbName": "orders"
             },
             {
@@ -24,8 +24,8 @@
                 "DbName": "customers"
             },
             {
-                "example": "UPDATE users SET name = '高橋' WHERE id = 3;",
-                "explanation": "usersテーブルでidが3のユーザーのnameを高橋に変更する。",
+                "example": "UPDATE users SET name = 'RENAMED' WHERE id = 3;",
+                "explanation": "usersテーブルでidが3のユーザーのnameをRENAMEDに変更する。",
                 "DbName": "users"
             }
         ]

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>行移動＋ID再振り分け＋JSON出力サンプル</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 16px;
+            padding: 0;
+        }
+
+        h1 {
+            margin-bottom: 12px;
+        }
+
+        textarea {
+            width: 100%;
+            font-family: monospace;
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            padding: 6px 14px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        .table-container {
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-bottom: 16px;
+            width: 100%;
+            min-width: 700px;
+            /* カラム数に応じて調整してください */
+        }
+
+        th,
+        td {
+            border: 1px solid #999;
+            padding: 8px 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* 操作ボタンを小さく */
+        .move-btn {
+            padding: 2px 6px;
+            font-size: 12px;
+            margin: 0 2px;
+        }
+
+        /* JSON出力用テキストエリア */
+        #jsonOutput {
+            height: 200px;
+            margin-top: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>SQL クイズ JSON→テーブル（行移動＋JSON出力）</h1>
+
+    <!-- JSON を貼り付けるテキストエリア -->
+    <p>以下のような形式の JSON を貼り付けて「テーブルを表示」をクリックしてください。</p>
+    <textarea id="jsonInput">
+[
+  {
+    "id": 1,
+    "level": 1,
+    "genre": "SELECT",
+    "question": "ユーザーの名前を取得する",
+    "answer": "SELECT name FROM users",
+    "DbName": "users"
+  },
+  {
+    "id": 2,
+    "level": 1,
+    "genre": "SELECT",
+    "question": "お客さんの年齢を取得する",
+    "answer": "SELECT age FROM customers",
+    "DbName": "customers"
+  },
+  {
+    "id": 3,
+    "level": 1,
+    "genre": "SELECT",
+    "question": "商品名を取得する",
+    "answer": "SELECT product_name FROM products",
+    "DbName": "products"
+  }
+]
+  </textarea>
+    <br />
+    <button id="renderButton">テーブルを表示</button>
+
+    <!-- テーブルを挿入する領域 -->
+    <div id="tableArea" class="table-container"></div>
+
+    <!-- JSON 出力ボタン -->
+    <button id="exportJsonButton" style="display:none;">JSON 出力</button>
+
+    <!-- JSON 出力先テキストエリア -->
+    <textarea id="jsonOutput" readonly placeholder="ここに現在のテーブル状態から生成された JSON が表示されます。"></textarea>
+
+    <script>
+        // 現在のカラム順（dataColumns）をグローバル変数で保持
+        let dataColumns = [];
+
+        document.getElementById('renderButton').addEventListener('click', function () {
+            const outputDiv = document.getElementById('tableArea');
+            outputDiv.innerHTML = ''; // 既存のテーブルをクリア
+            document.getElementById('jsonOutput').value = ''; // JSON出力欄もクリア
+            document.getElementById('exportJsonButton').style.display = 'none';
+
+            let data;
+            try {
+                data = JSON.parse(document.getElementById('jsonInput').value);
+            } catch (e) {
+                alert('JSON の解析に失敗しました。構文を確認してください。\n' + e.message);
+                return;
+            }
+
+            // 配列かチェック
+            if (!Array.isArray(data)) {
+                alert('JSON は配列形式（[ {...}, {...}, ... ]）である必要があります。');
+                return;
+            }
+            if (data.length === 0) {
+                alert('配列が空です。データを入力してください。');
+                return;
+            }
+            if (typeof data[0] !== 'object') {
+                alert('配列の要素がオブジェクト形式ではありません。');
+                return;
+            }
+
+            // dataColumns を最初の要素のキー順で取得（表示したい列の並び順）
+            dataColumns = Object.keys(data[0]);
+            // 例えば ["id","level","genre","question","answer","DbName"]
+
+            // テーブル全体を作成
+            const table = document.createElement('table');
+
+            // ── ヘッダー生成 ──
+            const thead = document.createElement('thead');
+            const headerRow = document.createElement('tr');
+
+            // 操作用の空ヘッダーセル（上下移動ボタンのため）
+            const controlTh = document.createElement('th');
+            controlTh.textContent = '操作';
+            headerRow.appendChild(controlTh);
+
+            // データカラムのヘッダー
+            dataColumns.forEach(function (colName) {
+                const th = document.createElement('th');
+                th.textContent = colName;
+                headerRow.appendChild(th);
+            });
+
+            thead.appendChild(headerRow);
+            table.appendChild(thead);
+
+            // ── ボディ生成 ──
+            const tbody = document.createElement('tbody');
+
+            data.forEach(function (rowObj) {
+                const tr = document.createElement('tr');
+
+                // ① 操作セル（上下移動ボタン）
+                const controlTd = document.createElement('td');
+
+                // 上移動ボタン
+                const upBtn = document.createElement('button');
+                upBtn.textContent = '▲';
+                upBtn.className = 'move-btn';
+                upBtn.onclick = function () { moveRow(tr, 'up'); };
+
+                // 下移動ボタン
+                const downBtn = document.createElement('button');
+                downBtn.textContent = '▼';
+                downBtn.className = 'move-btn';
+                downBtn.onclick = function () { moveRow(tr, 'down'); };
+
+                controlTd.appendChild(upBtn);
+                controlTd.appendChild(downBtn);
+                tr.appendChild(controlTd);
+
+                // ② データセル
+                dataColumns.forEach(function (colName) {
+                    const td = document.createElement('td');
+                    const val = rowObj[colName];
+                    td.textContent = (val !== undefined && val !== null) ? val : '';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            outputDiv.appendChild(table);
+
+            // 初期レンダー時に ID を振り直す（念のため）
+            updateIds();
+
+            // JSON 出力ボタンを表示
+            document.getElementById('exportJsonButton').style.display = 'inline-block';
+        });
+
+        /**
+         * 行を上下に移動させる関数
+         * @param {HTMLTableRowElement} tr    - 移動対象の <tr>
+         * @param {'up'|'down'} direction    - 'up' で1行上へ, 'down' で1行下へ
+         */
+        function moveRow(tr, direction) {
+            const tbody = tr.parentNode;
+            if (direction === 'up') {
+                const prev = tr.previousElementSibling;
+                if (prev) {
+                    tbody.insertBefore(tr, prev);
+                }
+            } else if (direction === 'down') {
+                const next = tr.nextElementSibling;
+                if (next) {
+                    tbody.insertBefore(next, tr);
+                }
+            }
+            // 移動後に ID を振り直す
+            updateIds();
+        }
+
+        /**
+         * 現在のテーブル行順に応じて "id" カラムを 1,2,3... のように再振り分けする
+         */
+        function updateIds() {
+            const table = document.querySelector('#tableArea table');
+            if (!table) return;
+
+            const headerCells = table.querySelectorAll('thead th');
+            // dataColumns の "id" がヘッダーの何番目か（0 始まり）のインデックスを取得
+            // ただし、最初に操作列があるので +1 オフセット
+            const idIndex = dataColumns.indexOf('id') + 1;
+            if (idIndex < 1) return; // id カラムが見つからなかったら何もしない
+
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function (tr, idx) {
+                const idCell = tr.children[idIndex];
+                if (idCell) {
+                    idCell.textContent = idx + 1; // 1始まりの連番
+                }
+            });
+        }
+
+        /**
+         * 現在のテーブル状態を JSON 化してテキストエリアに出力する
+         */
+        document.getElementById('exportJsonButton').addEventListener('click', function () {
+            const table = document.querySelector('#tableArea table');
+            if (!table) {
+                alert('先に「テーブルを表示」してください。');
+                return;
+            }
+
+            // ヘッダー行のセル数を確認
+            const headerThs = table.querySelectorAll('thead th');
+            // dataColumns の各キーに対するセルのインデックスは、先頭の「操作」列を飛ばして +1
+            // 例: dataColumns = ["id","level","genre","question","answer","DbName"]
+            // → headerThs = ["操作", "id", "level", "genre", ...]
+            //    id は headerThs の index=1, level は index=2, ... のようになる
+            const jsonArray = [];
+            const rows = table.querySelectorAll('tbody tr');
+            rows.forEach(function (tr) {
+                const obj = {};
+                dataColumns.forEach(function (colName, colIdx) {
+                    const cell = tr.children[colIdx + 1]; // +1 で「操作」分をスキップ
+                    let text = cell ? cell.textContent.trim() : '';
+                    // 数値に変換できるなら数値として扱う
+                    const num = Number(text);
+                    if (text !== '' && !isNaN(num)) {
+                        obj[colName] = num;
+                    } else {
+                        obj[colName] = text;
+                    }
+                });
+                jsonArray.push(obj);
+            });
+
+            const jsonStr = JSON.stringify(jsonArray, null, 2);
+            document.getElementById('jsonOutput').value = jsonStr;
+            // 必要に応じて、この JSON をクリップボードにコピーする処理なども追加可能です。
+        });
+    </script>
+</body>
+
+</html>

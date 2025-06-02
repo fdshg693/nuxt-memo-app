@@ -1,4 +1,8 @@
 <template>
+    <a href="https://github.com/fdshg693/nuxt-memo-app" target="_blank"
+        class="fixed bottom-4 right-4 bg-purple-500 text-white px-4 py-2 rounded-lg shadow-lg hover:bg-purple-600 transition">
+        GitHubのソースコードです
+    </a>
     <NuxtLink to="janken" class="btn-gradient mb-8">ジャンケン</NuxtLink>
     <NuxtLink to="quiz" class="btn-gradient">クイズ</NuxtLink>
     <NuxtLink to="sql" class="btn-gradient mb-8">SQL</NuxtLink>

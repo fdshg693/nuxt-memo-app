@@ -62,8 +62,107 @@
         "id": 8,
         "level": 1,
         "genre": "SELECT",
+        "subgenre": "WHERE",
         "question": "Laptopの在庫数を取得する",
         "answer": "SELECT stock FROM products WHERE product_name = 'Laptop'",
+        "DbName": "products"
+    },
+    {
+        "id": 9,
+        "level": 2,
+        "genre": "UPDATE",
+        "subgenre": "WHERE",
+        "question": "商品『Scanner』の在庫数を5に更新する",
+        "answer": "UPDATE products SET stock = 5 WHERE product_name = 'Scanner'",
+        "DbName": "products"
+    },
+    {
+        "id": 10,
+        "level": 2,
+        "genre": "DELETE",
+        "subgenre": "WHERE",
+        "question": "年齢が30歳のユーザーを削除する",
+        "answer": "DELETE FROM users WHERE age = 30",
+        "DbName": "users"
+    },
+    {
+        "id": 11,
+        "level": 2,
+        "genre": "INSERT",
+        "question": "新しい商品『Webcam』(9, 'Webcam', 12) を追加する",
+        "answer": "INSERT INTO products (id, product_name, stock) VALUES (9, 'Webcam', 12)",
+        "DbName": "products"
+    },
+    {
+        "id": 12,
+        "level": 2,
+        "genre": "SELECT",
+        "subgenre": "WHERE",
+        "question": "注文テーブルから合計金額が200以上の注文を取得する",
+        "answer": "SELECT * FROM orders WHERE total_amount >= 200",
+        "DbName": "orders"
+    },
+    {
+        "id": 13,
+        "level": 2,
+        "genre": "UPDATE",
+        "subgenre": "WHERE",
+        "question": "『Frank』という名前の顧客の年齢を32に更新する",
+        "answer": "UPDATE customers SET age = 32 WHERE name = 'Frank'",
+        "DbName": "customers"
+    },
+    {
+        "id": 14,
+        "level": 1,
+        "genre": "SELECT",
+        "subgenre": "COUNT",
+        "question": "ユーザーの人数を取得する",
+        "answer": "SELECT COUNT(*) FROM users",
+        "DbName": "users"
+    },
+    {
+        "id": 15,
+        "level": 1,
+        "genre": "SELECT",
+        "subgenre": "COUNT",
+        "question": "商品テーブルの種類数を取得する",
+        "answer": "SELECT COUNT(*) FROM products",
+        "DbName": "products"
+    },
+    {
+        "id": 16,
+        "level": 2,
+        "genre": "SELECT",
+        "subgenre": "ORDERBY",
+        "question": "注文金額が高い順に注文情報を取得する",
+        "answer": "SELECT * FROM orders ORDER BY total_amount DESC",
+        "DbName": "orders"
+    },
+    {
+        "id": 17,
+        "level": 2,
+        "genre": "SELECT",
+        "subgenre": "ORDERBY",
+        "question": "年齢が若い順に顧客情報を取得する",
+        "answer": "SELECT * FROM customers ORDER BY age ASC",
+        "DbName": "customers"
+    },
+    {
+        "id": 18,
+        "level": 2,
+        "genre": "SELECT",
+        "subgenre": "GROUPBY",
+        "question": "年齢ごとのユーザー数を取得する",
+        "answer": "SELECT age, COUNT(*) FROM users GROUP BY age",
+        "DbName": "users"
+    },
+    {
+        "id": 19,
+        "level": 2,
+        "genre": "SELECT",
+        "subgenre": "GROUPBY",
+        "question": "商品ごとの在庫合計数を取得する",
+        "answer": "SELECT product_name, SUM(stock) FROM products GROUP BY product_name",
         "DbName": "products"
     }
 ]

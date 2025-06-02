@@ -8,6 +8,11 @@
             <NuxtLink v-for="genre in currentQA.genre" :key="genre" :to="`/sql/explanation/${genre}`"
                 class="btn-gradient">{{ genre }}解説</NuxtLink>
         </div>
+        <p>関連するサブジャンルのSQL解説</p>
+        <div v-if="currentQA.subgenre && currentQA.subgenre.length" class="flex flex-wrap justify-center gap-4 mt-4">
+            <NuxtLink v-for="subgenre in currentQA.subgenre" :key="subgenre" :to="`/sql/explanation/${subgenre}`"
+                class="btn-gradient">{{ subgenre }}解説</NuxtLink>
+        </div>
 
         <h1
             class="text-3xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
@@ -31,7 +36,8 @@
                 データベースをリセット
             </div>
 
-            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading" />
+            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading"
+                :show-ai-prompt-modal="showAiPromptModal" />
 
             <div v-if="aiAnswer || aiErrorDisplay" class="mb-4">
                 <div v-if="aiAnswer"
@@ -96,6 +102,7 @@ const aiErrorDisplay = ref<string | null>(null);
 const aiAnswer = ref<string>('');
 const isAiLoading = ref(false);
 const sqlErrorDisplay = ref<string | null>(null);
+const showAiPromptModal = ref(true); // AIプロンプトモーダルの表示制御
 
 // 結果・カラム
 const userAnswerColumns = ref<string[]>([]);
