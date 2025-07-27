@@ -38,7 +38,8 @@
             <div v-if="aiAnswer || aiErrorDisplay" class="mb-4">
                 <div v-if="aiAnswer"
                     class="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 text-indigo-800 p-3 rounded mb-2">
-                    <span class="font-semibold">AIの回答:</span> {{ aiAnswer }}
+                    <span class="font-semibold">AIの回答:</span> 
+                    <SafeAiResponse :response="aiAnswer" />
                 </div>
                 <div v-if="aiErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
                     {{ aiErrorDisplay }}
@@ -237,12 +238,30 @@ async function askAI(userPrompt: string) {
     const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQA.value.question}\n正しいSQLクエリ: ${currentQA.value.answer}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
-        body: { prompt },
+        body: { 
+            prompt,
+            sqlQuery: sql.value,
+            question: currentQA.value.question,
+            userPrompt
+        },
     });
     if (error.value) {
         aiErrorDisplay.value = 'AIからの応答に失敗しました。';
     } else {
-        aiAnswer.value = String(aiResponse.value ?? 'AIからの応答に失敗しました。');
+        // Handle the response properly
+        const response = aiResponse.value;
+        if (typeof response === 'string') {
+            aiAnswer.value = response;
+        } else if (response && typeof response === 'object') {
+            // Handle error objects or other non-string responses
+            if (response.error) {
+                aiErrorDisplay.value = response.error;
+            } else {
+                aiAnswer.value = JSON.stringify(response);
+            }
+        } else {
+            aiAnswer.value = 'AIからの応答に失敗しました。';
+        }
     }
     isAiLoading.value = false;
 }
