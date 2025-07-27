@@ -120,7 +120,7 @@ await expect(page.getByText('不正解数:')).toBeVisible();
 ### 2.3 ランダム計算クイズテスト
 ```javascript
 // 計算問題の表示確認
-await expect(page.getByText(/\d+ × \d+ = \?/)).toBeVisible();
+await expect(page.getByText(/\d+ [×*] \d+ = \?/)).toBeVisible();
 await page.getByRole('spinbutton').fill('256');
 await page.getByRole('button', { name: '回答する' }).click();
 
