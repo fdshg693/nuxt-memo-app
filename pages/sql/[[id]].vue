@@ -39,7 +39,7 @@
                 <div v-if="aiAnswer"
                     class="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 text-indigo-800 p-3 rounded mb-2">
                     <span class="font-semibold">AIの回答:</span> 
-                    <span v-html="formatAiResponse(aiAnswer)"></span>
+                    <SafeAiResponse :response="aiAnswer" />
                 </div>
                 <div v-if="aiErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
                     {{ aiErrorDisplay }}
@@ -224,15 +224,6 @@ async function createAnswerCopyTables() {
 function checkAnswer() {
     executeAnswerSQL();
     isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
-}
-
-// ===== AI回答表示用のフォーマット関数 =====
-function formatAiResponse(response: string): string {
-    // Convert markdown links [text](url) to HTML links
-    return response.replace(
-        /\[([^\]]+)\]\(([^)]+)\)/g,
-        '<a href="$2" target="_blank" class="text-blue-600 hover:text-blue-800 underline">$1</a>'
-    );
 }
 
 // ===== AI回答 =====
