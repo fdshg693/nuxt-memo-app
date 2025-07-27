@@ -9,7 +9,9 @@
                 class="px-6 py-2 rounded-lg bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold hover:from-indigo-600 hover:to-purple-600 transition shadow">
                 実行
             </button>
-            <AiPromptModal v-if="props.showAiPromptModal !== false" :isAiLoading="isAiLoading"
+            <AiPromptModal v-if="props.showAiPromptModal !== false" 
+                :isAiLoading="isAiLoading"
+                :sqlContext="modelValue"
                 @ask-ai="emit('ask-ai', $event)" />
         </div>
     </div>
