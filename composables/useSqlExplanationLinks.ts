@@ -106,10 +106,12 @@ export const useSqlExplanationLinks = () => {
       }
     })
     
-    // Remove duplicates
-    return relevantExplanations.filter((explanation, index, self) => 
-      index === self.findIndex(e => e.keyword === explanation.keyword)
-    )
+    // Remove duplicates using a Map for better performance
+    const uniqueExplanationsMap = new Map<string, ExplanationLink>()
+    relevantExplanations.forEach(explanation => {
+      uniqueExplanationsMap.set(explanation.keyword, explanation)
+    })
+    return Array.from(uniqueExplanationsMap.values())
   }
 
   /**
