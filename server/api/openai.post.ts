@@ -100,7 +100,7 @@ export default defineEventHandler(async (event) => {
             )
         }
         
-        const formatExplanationLinks = (explanations: any[]) => {
+        const formatExplanationLinks = (explanations: ExplanationLink[]): string => {
             if (explanations.length === 0) {
                 return ''
             }
