@@ -1,0 +1,190 @@
+[
+  {
+    "id": "explain-sql-basic",
+    "name": "基本SQL文の説明",
+    "category": "explanation",
+    "template": "以下のSQL文について詳しく説明してください：\n\n```sql\n{sqlQuery}\n```\n\n対象テーブル: {tableName}\n\n{explanationContext}",
+    "variables": [
+      {
+        "name": "sqlQuery",
+        "type": "string",
+        "description": "説明対象のSQL文",
+        "required": true
+      },
+      {
+        "name": "tableName",
+        "type": "string",
+        "description": "対象となるテーブル名",
+        "required": true
+      },
+      {
+        "name": "explanationContext",
+        "type": "string",
+        "description": "追加の説明コンテキスト",
+        "required": false
+      }
+    ],
+    "explanationSources": [
+      "selectExplanation.json",
+      "whereExplanation.json"
+    ]
+  },
+  {
+    "id": "hint-join-query",
+    "name": "JOIN操作のヒント",
+    "category": "hint",
+    "template": "この問題を解くためのヒント：\n\n1. {tableA}テーブルと{tableB}テーブルの関係を考えてみましょう\n2. {joinCondition}で結合できます\n3. {additionalHint}",
+    "variables": [
+      {
+        "name": "tableA",
+        "type": "string",
+        "description": "結合する1つ目のテーブル",
+        "required": true
+      },
+      {
+        "name": "tableB",
+        "type": "string",
+        "description": "結合する2つ目のテーブル",
+        "required": true
+      },
+      {
+        "name": "joinCondition",
+        "type": "string",
+        "description": "結合条件",
+        "required": true
+      },
+      {
+        "name": "additionalHint",
+        "type": "string",
+        "description": "追加のヒント",
+        "required": false
+      }
+    ],
+    "explanationSources": [
+      "joinExplanation.json"
+    ]
+  },
+  {
+    "id": "debug-syntax-error",
+    "name": "SQL構文エラーのデバッグ",
+    "category": "debug",
+    "template": "SQL文にエラーがあります。以下の点を確認してください：\n\n```sql\n{errorQuery}\n```\n\nエラー内容: {errorMessage}\n\n確認ポイント:\n1. {checkPoint1}\n2. {checkPoint2}\n3. {checkPoint3}",
+    "variables": [
+      {
+        "name": "errorQuery",
+        "type": "string",
+        "description": "エラーのあるSQL文",
+        "required": true
+      },
+      {
+        "name": "errorMessage",
+        "type": "string",
+        "description": "エラーメッセージ",
+        "required": true
+      },
+      {
+        "name": "checkPoint1",
+        "type": "string",
+        "description": "確認ポイント1",
+        "required": true
+      },
+      {
+        "name": "checkPoint2",
+        "type": "string",
+        "description": "確認ポイント2",
+        "required": false
+      },
+      {
+        "name": "checkPoint3",
+        "type": "string",
+        "description": "確認ポイント3",
+        "required": false
+      }
+    ],
+    "explanationSources": []
+  },
+  {
+    "id": "alternative-approach",
+    "name": "別解の提案",
+    "category": "alternative",
+    "template": "正解です！他にも以下のような書き方があります：\n\n**方法1: {method1Name}**\n```sql\n{alternative1}\n```\n\n**方法2: {method2Name}**\n```sql\n{alternative2}\n```\n\n{performanceNote}",
+    "variables": [
+      {
+        "name": "method1Name",
+        "type": "string",
+        "description": "代替方法1の名前",
+        "required": true
+      },
+      {
+        "name": "alternative1",
+        "type": "string",
+        "description": "代替SQL文1",
+        "required": true
+      },
+      {
+        "name": "method2Name",
+        "type": "string",
+        "description": "代替方法2の名前",
+        "required": false
+      },
+      {
+        "name": "alternative2",
+        "type": "string",
+        "description": "代替SQL文2",
+        "required": false
+      },
+      {
+        "name": "performanceNote",
+        "type": "string",
+        "description": "パフォーマンスに関する注意点",
+        "required": false
+      }
+    ],
+    "explanationSources": []
+  },
+  {
+    "id": "optimization-suggestion",
+    "name": "クエリ最適化の提案",
+    "category": "optimization",
+    "template": "このクエリは最適化できます：\n\n**現在のクエリ:**\n```sql\n{currentQuery}\n```\n\n**最適化後:**\n```sql\n{optimizedQuery}\n```\n\n**改善点:**\n- {improvement1}\n- {improvement2}\n- {improvement3}\n\n**パフォーマンス向上:**\n{performanceImprovement}",
+    "variables": [
+      {
+        "name": "currentQuery",
+        "type": "string",
+        "description": "現在のSQL文",
+        "required": true
+      },
+      {
+        "name": "optimizedQuery",
+        "type": "string",
+        "description": "最適化されたSQL文",
+        "required": true
+      },
+      {
+        "name": "improvement1",
+        "type": "string",
+        "description": "改善点1",
+        "required": true
+      },
+      {
+        "name": "improvement2",
+        "type": "string",
+        "description": "改善点2",
+        "required": false
+      },
+      {
+        "name": "improvement3",
+        "type": "string",
+        "description": "改善点3",
+        "required": false
+      },
+      {
+        "name": "performanceImprovement",
+        "type": "string",
+        "description": "具体的なパフォーマンス向上内容",
+        "required": false
+      }
+    ],
+    "explanationSources": []
+  }
+]

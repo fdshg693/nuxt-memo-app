@@ -1,0 +1,117 @@
+[
+  {
+    "id": "transaction-001",
+    "type": "multiple-choice",
+    "category": "transaction",
+    "subCategory": "isolation-level",
+    "level": 3,
+    "question": "**トランザクション分離レベル**について、最も厳格な分離レベルはどれですか？\n\n以下のシナリオを考えてください：\n- 複数のユーザーが同時に銀行口座の残高を参照・更新している\n- データの整合性を最も重視したい場合",
+    "choices": [
+      "READ UNCOMMITTED",
+      "READ COMMITTED", 
+      "REPEATABLE READ",
+      "SERIALIZABLE"
+    ],
+    "correct": 3,
+    "explanation": "**SERIALIZABLE**が最も厳格な分離レベルです。\n\n各分離レベルの特徴：\n- **READ UNCOMMITTED**: ダーティリード、ノンリピータブルリード、ファントムリードが発生する可能性\n- **READ COMMITTED**: ダーティリードは防げるが、ノンリピータブルリード、ファントムリードは発生する可能性  \n- **REPEATABLE READ**: ダーティリード、ノンリピータブルリードは防げるが、ファントムリードは発生する可能性\n- **SERIALIZABLE**: 全ての問題を防ぎ、完全にシリアライズされた実行を保証",
+    "tags": ["transaction", "isolation", "acid", "concurrency"],
+    "references": [
+      {
+        "title": "SQL標準における分離レベル",
+        "url": "https://www.postgresql.org/docs/current/transaction-iso.html"
+      }
+    ]
+  },
+  {
+    "id": "performance-001", 
+    "type": "multiple-choice",
+    "category": "performance",
+    "subCategory": "index",
+    "level": 2,
+    "question": "**インデックス**について、以下のクエリで最も効果的なインデックスはどれですか？\n\n```sql\nSELECT * FROM users \nWHERE age > 25 AND city = 'Tokyo'\nORDER BY created_at DESC;\n```",
+    "choices": [
+      "age列のみにインデックス",
+      "city列のみにインデックス", 
+      "(city, age, created_at)の複合インデックス",
+      "(age, city)の複合インデックス"
+    ],
+    "correct": 2,
+    "explanation": "**(city, age, created_at)の複合インデックス**が最も効果的です。\n\n理由：\n1. **city = 'Tokyo'**: 等価条件なので、最初にフィルタリング\n2. **age > 25**: 範囲条件なので、cityの後に配置\n3. **ORDER BY created_at**: インデックスに含めることでソートを高速化\n\n複合インデックスの順序は「等価条件 → 範囲条件 → ソート条件」が基本原則です。",
+    "tags": ["performance", "index", "query-optimization", "composite-index"],
+    "references": [
+      {
+        "title": "MySQLのインデックス設計",
+        "url": "https://dev.mysql.com/doc/refman/8.0/en/optimization-indexes.html"
+      }
+    ]
+  },
+  {
+    "id": "deadlock-001",
+    "type": "multiple-choice", 
+    "category": "deadlock",
+    "subCategory": "prevention",
+    "level": 4,
+    "question": "**デッドロック**の回避策として、以下のシナリオで最も適切な対応はどれですか？\n\n**シナリオ:**\n```sql\n-- Transaction A\nUPDATE accounts SET balance = balance - 100 WHERE id = 1;\nUPDATE accounts SET balance = balance + 100 WHERE id = 2;\n\n-- Transaction B  \nUPDATE accounts SET balance = balance - 50 WHERE id = 2;\nUPDATE accounts SET balance = balance + 50 WHERE id = 1;\n```",
+    "choices": [
+      "ロックタイムアウトを短く設定する",
+      "常に同じ順序（id順）でテーブルをロックする",
+      "トランザクション分離レベルをREAD UNCOMMITTEDにする", 
+      "すべてのUPDATEを単一のSQL文にまとめる"
+    ],
+    "correct": 1,
+    "explanation": "**常に同じ順序（id順）でテーブルをロックする**が最も適切です。\n\n詳細説明：\n- **デッドロックの原因**: Transaction AとBが異なる順序でリソースをロックしているため\n- **解決策**: 全てのトランザクションで統一した順序（例：id昇順）でロックを取得\n- **効果**: 循環待機が発生しなくなり、デッドロックを根本的に防止\n\n他の選択肢の問題点：\n- タイムアウト設定：デッドロックは防げない\n- READ UNCOMMITTED：データ整合性の問題\n- 単一SQL：このケースでは実装困難",
+    "tags": ["deadlock", "locking", "transaction", "concurrency"],
+    "references": [
+      {
+        "title": "デッドロック検出と回避",
+        "url": "https://dev.mysql.com/doc/refman/8.0/en/innodb-deadlocks.html"
+      }
+    ]
+  },
+  {
+    "id": "transaction-002",
+    "type": "multiple-choice",
+    "category": "transaction", 
+    "subCategory": "acid",
+    "level": 2,
+    "question": "**ACID特性**について、**Durability（永続性）**を保証するために必要な仕組みはどれですか？",
+    "choices": [
+      "ロック機構",
+      "トランザクションログ（WAL）",
+      "インデックス",
+      "分離レベル設定"
+    ],
+    "correct": 1,
+    "explanation": "**トランザクションログ（WAL: Write-Ahead Logging）**が正解です。\n\nDurability（永続性）の保証メカニズム：\n1. **WAL**: トランザクションの変更内容を事前にログに記録\n2. **COMMIT時の動作**: ログをディスクに確実に書き込み\n3. **障害回復**: システム再起動時にログから未完了トランザクションを復元\n\n他の選択肢との違い：\n- **ロック機構**: Consistency（一貫性）とIsolation（分離性）を保証\n- **インデックス**: 検索性能の向上（ACID特性とは無関係）\n- **分離レベル**: Isolation（分離性）の制御",
+    "tags": ["transaction", "acid", "durability", "wal"],
+    "references": [
+      {
+        "title": "PostgreSQL WALの仕組み",
+        "url": "https://www.postgresql.org/docs/current/wal-intro.html"
+      }
+    ]
+  },
+  {
+    "id": "performance-002",
+    "type": "multiple-choice",
+    "category": "performance",
+    "subCategory": "query-plan", 
+    "level": 3,
+    "question": "**クエリ実行計画**の分析で、以下のうち最もパフォーマンスが悪いと判断される操作はどれですか？",
+    "choices": [
+      "Index Scan",
+      "Seq Scan (Full Table Scan)",
+      "Nested Loop Join",
+      "Hash Join"
+    ],
+    "correct": 1,
+    "explanation": "**Seq Scan (Full Table Scan)**が最もパフォーマンスが悪い操作です。\n\n各操作の特徴：\n- **Index Scan**: インデックスを使用した効率的な検索（O(log n)）\n- **Seq Scan**: テーブル全体をスキャン（O(n)）、大量データで非常に遅い\n- **Nested Loop Join**: 小さなテーブル同士の結合では効率的\n- **Hash Join**: 大きなテーブル同士の結合で効率的\n\n**注意点:**\n- Seq Scanが常に悪いわけではない（小さなテーブルやほぼ全行を取得する場合は適切）\n- ただし、大量データでのSeq Scanは避けるべき\n- インデックスの作成や条件の見直しで改善可能",
+    "tags": ["performance", "query-plan", "scan", "optimization"],
+    "references": [
+      {
+        "title": "PostgreSQL実行計画の読み方",
+        "url": "https://www.postgresql.org/docs/current/using-explain.html"
+      }
+    ]
+  }
+]

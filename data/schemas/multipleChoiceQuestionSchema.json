@@ -1,0 +1,92 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "MultipleChoiceQuestion",
+  "description": "選択式問題用のJSONスキーマ",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(transaction|performance|deadlock)-\\d{3}$",
+      "description": "問題の一意識別子（カテゴリ-番号形式）"
+    },
+    "type": {
+      "type": "string",
+      "const": "multiple-choice",
+      "description": "問題タイプ（選択式固定）"
+    },
+    "category": {
+      "type": "string",
+      "enum": ["transaction", "performance", "deadlock"],
+      "description": "問題の主要カテゴリ"
+    },
+    "subCategory": {
+      "type": "string",
+      "description": "詳細分類（分離レベル、インデックス、デッドロック防止等）",
+      "minLength": 1
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5,
+      "description": "難易度レベル（1:初級 〜 5:上級）"
+    },
+    "question": {
+      "type": "string",
+      "description": "問題文（Markdown対応）",
+      "minLength": 1
+    },
+    "choices": {
+      "type": "array",
+      "description": "選択肢のリスト",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 2,
+      "maxItems": 6,
+      "uniqueItems": true
+    },
+    "correct": {
+      "type": "integer",
+      "description": "正解選択肢のインデックス（0始まり）",
+      "minimum": 0
+    },
+    "explanation": {
+      "type": "string",
+      "description": "解説文（Markdown対応）",
+      "minLength": 1
+    },
+    "tags": {
+      "type": "array",
+      "description": "検索・分類用タグ",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-z0-9-]+$"
+      },
+      "uniqueItems": true
+    },
+    "references": {
+      "type": "array",
+      "description": "参考資料のリスト",
+      "items": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "参考資料のタイトル",
+            "minLength": 1
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "参考資料のURL"
+          }
+        },
+        "required": ["title", "url"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["id", "type", "category", "subCategory", "level", "question", "choices", "correct", "explanation", "tags", "references"],
+  "additionalProperties": false
+}

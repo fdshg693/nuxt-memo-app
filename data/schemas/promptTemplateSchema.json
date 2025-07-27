@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "PromptTemplate",
+  "description": "プロンプトテンプレート管理用のJSONスキーマ",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "テンプレートの一意識別子",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "description": "テンプレート名",
+      "minLength": 1
+    },
+    "category": {
+      "type": "string",
+      "enum": ["explanation", "hint", "debug", "alternative", "optimization"],
+      "description": "プロンプトカテゴリ"
+    },
+    "template": {
+      "type": "string",
+      "description": "プロンプトテンプレート（変数プレースホルダー含む）",
+      "minLength": 1
+    },
+    "variables": {
+      "type": "array",
+      "description": "テンプレート変数の定義",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "変数名",
+            "pattern": "^[a-zA-Z0-9_]+$"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["string", "number", "boolean"],
+            "description": "変数の型"
+          },
+          "description": {
+            "type": "string",
+            "description": "変数の説明"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "必須フィールドかどうか",
+            "default": false
+          }
+        },
+        "required": ["name", "type", "description", "required"],
+        "additionalProperties": false
+      }
+    },
+    "explanationSources": {
+      "type": "array",
+      "description": "参照する説明文章ファイル名のリスト",
+      "items": {
+        "type": "string",
+        "pattern": "^[a-zA-Z0-9_-]+\\.json$"
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": ["id", "name", "category", "template", "variables", "explanationSources"],
+  "additionalProperties": false
+}
