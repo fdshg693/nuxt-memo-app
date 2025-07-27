@@ -1,6 +1,12 @@
 // server/api/openai.post.ts
 import { defineEventHandler, readBody } from 'h3'
 
+interface ExplanationLink {
+    keyword: string
+    title: string
+    url: string
+}
+
 export default defineEventHandler(async (event) => {
     const { prompt, sqlQuery, question, userPrompt } = await readBody(event)
     const config = useRuntimeConfig()
@@ -29,7 +35,7 @@ export default defineEventHandler(async (event) => {
                 { keyword: 'sum', title: 'SUM関数の解説', url: '/sql/explanation/sum' }
             ]
             
-            const relevantExplanations: Explanation[] = []
+            const relevantExplanations: ExplanationLink[] = []
             const allText = `${sqlQuery} ${question} ${userPrompt}`.toLowerCase()
             
             explanations.forEach(explanation => {
