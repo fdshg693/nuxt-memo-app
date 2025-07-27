@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
                 { keyword: 'sum', title: 'SUM関数の解説', url: '/sql/explanation/sum' }
             ]
             
-            const relevantExplanations: any[] = []
+            const relevantExplanations: Explanation[] = []
             const allText = `${sqlQuery} ${question} ${userPrompt}`.toLowerCase()
             
             explanations.forEach(explanation => {
