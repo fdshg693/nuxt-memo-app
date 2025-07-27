@@ -32,17 +32,7 @@
 ### 依存関係のインストール
 
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
 ### 環境変数の設定
@@ -59,17 +49,7 @@ NUXT_PUBLIC_API_KEY=your_public_api_key_here
 開発サーバーを `http://localhost:3000` で起動：
 
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
 ## 本番環境 (Production)
@@ -77,33 +57,13 @@ bun run dev
 本番用にアプリケーションをビルド：
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
 ```
 
 本番ビルドをローカルでプレビュー：
 
 ```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
 
 ## アプリの構成 (App Structure)
