@@ -17,8 +17,8 @@ export default defineEventHandler(async (event) => {
                 messages: [
                     { role: 'user', content: prompt },
                 ],
-                max_tokens: 300,
-                temperature: 0.7,
+                max_tokens: 2000,
+                temperature: 0.3,
             }
         })
         return response.choices[0].message.content
