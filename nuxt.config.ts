@@ -18,5 +18,6 @@ export default defineNuxtConfig({
   },
   plugins: [
     '~/plugins/global-css.ts',
+    '~/plugins/markdown.client.ts',
   ],
 })
