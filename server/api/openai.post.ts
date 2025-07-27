@@ -122,7 +122,13 @@ export default defineEventHandler(async (event) => {
         // Check if OpenAI API key is available
         if (!config.openaiApiKey) {
             // Mock response for testing purposes when API key is not available
-            const mockResponse = `このクエリは正しく動作します。SELECT文でusersテーブルからnameカラムを取得し、WHERE句でage > 30の条件で絞り込んでいます。結果として、30歳を超えるユーザーの名前が取得されます。`
+            const mockResponse = `このクエリは正しく動作します。${
+                sqlQuery ? `クエリ: "${sqlQuery}"` : 'クエリが提供されていません。'
+            } ${
+                question ? `質問: "${question}"` : '質問が提供されていません。'
+            } ${
+                userPrompt ? `ユーザープロンプト: "${userPrompt}"` : 'ユーザープロンプトが提供されていません。'
+            }`
             const explanationLinks = formatExplanationLinks(relevantExplanations)
             return mockResponse + explanationLinks
         }
