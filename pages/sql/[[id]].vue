@@ -1,152 +1,91 @@
 <template>
     <div
         class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-start py-8">
-        <NuxtLink to="/" class="btn-gradient">トップ</NuxtLink>
-        <NuxtLink to="/sql/explanation" class="btn-gradient">SQL解説</NuxtLink>
-        <p>関連するジャンルのSQL解説</p>
-        <div v-if="currentQA.genre && currentQA.genre.length" class="flex flex-wrap justify-center gap-4 mt-4">
-            <NuxtLink v-for="genre in currentQA.genre" :key="genre" :to="`/sql/explanation/${genre}`"
-                class="btn-gradient">{{ genre }}解説</NuxtLink>
-        </div>
-        <p>関連するサブジャンルのSQL解説</p>
-        <div v-if="currentQA.subgenre && currentQA.subgenre.length" class="flex flex-wrap justify-center gap-4 mt-4">
-            <NuxtLink v-for="subgenre in currentQA.subgenre" :key="subgenre" :to="`/sql/explanation/${subgenre}`"
-                class="btn-gradient">{{ subgenre }}解説</NuxtLink>
-        </div>
-
-        <h1
-            class="text-3xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600">
-            SQLの問題</h1>
+        <!-- Header and Navigation -->
+        <SqlQuestionHeader :current-q-a="currentQA" />
+        
+        <!-- Main Content -->
         <div id="app" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-            <div v-if="currentQA.question" class="mb-4">
-                <h2 class="text-xl font-bold text-indigo-700 mb-2">{{ currentQA.question }}</h2>
-            </div>
-            <QuestionNavigation :index="index" :questions-length="questions.length" @prev="prevQuestion"
-                @next="nextQuestion" />
-            <div class="flex flex-row flex-wrap gap-4 mb-4">
-                <div v-if="currentQA.dbs.length === 0" class="text-gray-500 text-sm">データベースが見つかりません</div>
-                <div v-else class="text-gray-500 text-sm">
-                    <div v-for="db in currentQA.dbs" :key="db.name" class="flex-1 min-w-[250px]">
-                        <DatabaseTable :db="db" />
-                    </div>
-                </div>
-            </div>
+            <!-- Question Content -->
+            <SqlQuestionContent 
+                :current-q-a="currentQA"
+                :index="index"
+                :questions-length="questions.length"
+                @prev="prevQuestion"
+                @next="nextQuestion"
+            />
 
-            <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" :is-ai-loading="isAiLoading"
-                :show-ai-prompt-modal="showAiPromptModal" />
+            <!-- AI Assistant -->
+            <SqlAiAssistant 
+                :ai-answer="aiAnswer"
+                :ai-error-display="aiErrorDisplay"
+            />
 
-            <div v-if="aiAnswer || aiErrorDisplay" class="mb-4">
-                <div v-if="aiAnswer"
-                    class="bg-gradient-to-r from-indigo-50 to-purple-50 border-l-4 border-indigo-400 text-indigo-800 p-3 rounded mb-2">
-                    <span class="font-semibold">AIの回答:</span> 
-                    <SafeAiResponse :response="aiAnswer" />
-                </div>
-                <div v-if="aiErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
-                    {{ aiErrorDisplay }}
-                </div>
-            </div>
-
-            <ResultTable :columns="userAnswerColumns" :result="result" />
-            <div v-if="sqlErrorDisplay" class="bg-red-50 border-l-4 border-red-400 text-red-700 p-3 rounded">
-                {{ sqlErrorDisplay }}
-            </div>
-
-            <AnswerCheck :is-correct="isCorrect" :current-answer="currentQA.answer" @check="checkAnswer" />
+            <!-- SQL Execution Panel -->
+            <SqlExecutionPanel
+                v-model:sql="sql"
+                :is-ai-loading="isAiLoading"
+                :show-ai-prompt-modal="showAiPromptModal"
+                :user-answer-columns="userAnswerColumns"
+                :result="result"
+                :sql-error-display="sqlErrorDisplay"
+                :is-correct="isCorrect"
+                :current-answer="currentQA.answer"
+                @execute="executeUserSQL"
+                @ask-ai="askAI"
+                @check="checkAnswer"
+            />
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, toRaw } from 'vue';
+import { watch, onMounted } from 'vue';
 import { useRoute } from 'vue-router'
-import isEqual from 'lodash/isEqual';
-import { useNuxtApp } from '#app';
 
 import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
-import { useSqlTableUtils } from '~/composables/useSqlTableUtils';
+import { useSqlQuestionState } from '~/composables/useSqlQuestionState';
+import { useSqlExecution } from '~/composables/useSqlExecution';
 
-import QuestionNavigation from '~/components/QuestionNavigation.vue';
-import DatabaseTable from '~/components/DatabaseTable.vue';
-import SqlEditor from '~/components/SqlEditor.vue';
-import ResultTable from '~/components/ResultTable.vue';
-import AnswerCheck from '~/components/AnswerCheck.vue';
+import SqlQuestionHeader from '~/components/sql/SqlQuestionHeader.vue';
+import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
+import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
+import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
 
-// 型定義
-defineProps();
-
-interface Table {
-    name: string;
-    columns: string[];
-    rows: Record<string, any>[];
-}
-
-// ===== Composables & Nuxt App =====
+// ===== Composables =====
 const route = useRoute();
-const nuxt = useNuxtApp();
-const $alasql = nuxt.$alasql as typeof import('alasql');
 const { questions, loadQuestions } = useSqlQuiz();
 const { loadDatabases, getDatabaseByName } = useSqlDb();
+const { 
+  index, 
+  sql, 
+  isCorrect, 
+  aiErrorDisplay, 
+  aiAnswer, 
+  isAiLoading,
+  sqlErrorDisplay,
+  showAiPromptModal,
+  userAnswerColumns,
+  result,
+  correctResult,
+  currentQA,
+  resetSqlAndAi,
+  setNoQuestion
+} = useSqlQuestionState();
 
-// ===== State =====
-// ルーティング・インデックス
-const index = ref(1);
-
-// SQL・AI・判定関連
-const sql = ref('');
-const isCorrect = ref<boolean | null>(null);
-const aiErrorDisplay = ref<string | null>(null);
-const aiAnswer = ref<string>('');
-const isAiLoading = ref(false);
-const sqlErrorDisplay = ref<string | null>(null);
-const showAiPromptModal = ref(true); // AIプロンプトモーダルの表示制御
-
-// 結果・カラム
-const userAnswerColumns = ref<string[]>([]);
-const result = ref<Record<string, any>[]>([]);
-const correctResult = ref<Record<string, any>[]>([]);
-
-// 現在のQA・DB情報
-const currentQA = ref({
-    question: '',
-    answer: '',
-    showRecordsSql: '',
-    dbNames: [] as string[],
-    dbs: [] as Table[],
-    genre: [] as string[],
-    subgenre: [] as string[],
-});
-
-// ===== DBユーティリティ =====
-const { createCopyTables, executeSQLWithTablePostfix } = useSqlTableUtils($alasql);
+const { 
+  executeUserSQL: executeUserSQLComposable,
+  executeAnswerSQL,
+  createUserCopyTables,
+  createAnswerCopyTables,
+  checkAnswer: checkAnswerComposable
+} = useSqlExecution();
 
 // ===== Utility Functions =====
 function setRouteParams() {
     const id = route.params.id;
     index.value = id == '' ? 1 : Number(id);
-}
-
-function resetSqlAndAi() {
-    sql.value = '';
-    aiErrorDisplay.value = null;
-    aiAnswer.value = '';
-    isAiLoading.value = false;
-    isCorrect.value = null;
-    userAnswerColumns.value = [];
-    result.value = [];
-    correctResult.value = [];
-}
-
-function setNoQuestion() {
-    currentQA.value = {
-        question: '問題が見つかりません',
-        answer: '',
-        dbNames: [],
-        dbs: [],
-        genre: [],
-        showRecordsSql: '',
-        subgenre: [],
-    };
 }
 
 function setCurrentQA() {
@@ -169,64 +108,22 @@ function setCurrentQA() {
     setNoQuestion();
 }
 
-// ===== DBテーブル操作 =====
-// ===== SQL実行・AI =====
+// ===== SQL & AI Functions =====
 async function executeUserSQL() {
-    sqlErrorDisplay.value = null;
+    await executeUserSQLComposable(sql.value, currentQA, result, userAnswerColumns, sqlErrorDisplay);
     isCorrect.value = null;
-    try {
-        if (currentQA.value.dbs) {
-            let { result: userRes, columns } = executeSQLWithTablePostfix(sql.value, 'user', currentQA.value.dbNames);
-            if (currentQA.value.showRecordsSql !== '') {
-                ({ result: userRes, columns } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'user', currentQA.value.dbNames));
-            }
-            result.value = userRes;
-            userAnswerColumns.value = columns;
-        } else {
-            sqlErrorDisplay.value = 'データベースが見つかりません';
-        }
-    } catch (error) {
-        result.value = [];
-        userAnswerColumns.value = [];
-        sqlErrorDisplay.value = `SQLの実行中にエラーが発生しました。${error instanceof Error ? error.message : String(error)}`;
-    } finally {
-        await createUserCopyTables();
-    }
-}
-
-async function executeAnswerSQL() {
-    try {
-        if (currentQA.value.dbs) {
-            let { result: answerRes } = executeSQLWithTablePostfix(currentQA.value.answer, 'answer', currentQA.value.dbNames);
-            correctResult.value = answerRes;
-            if (currentQA.value.showRecordsSql !== '') {
-                ({ result: answerRes } = executeSQLWithTablePostfix(currentQA.value.showRecordsSql, 'answer', currentQA.value.dbNames));
-                correctResult.value = answerRes;
-            }
-        } else {
-            correctResult.value = [];
-        }
-    } catch (error) {
-        correctResult.value = [];
-    } finally {
-        await createAnswerCopyTables();
-    }
-}
-
-async function createUserCopyTables() {
-    await createCopyTables('user', currentQA.value.dbs);
-}
-
-async function createAnswerCopyTables() {
-    await createCopyTables('answer', currentQA.value.dbs);
 }
 
 function checkAnswer() {
-    executeAnswerSQL();
-    isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
+    checkAnswerComposable(
+        result,
+        correctResult,
+        isCorrect,
+        () => executeAnswerSQL(currentQA, correctResult)
+    );
 }
 
-// ===== AI回答 =====
+// ===== AI Functions =====
 async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
@@ -266,7 +163,7 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = false;
 }
 
-// ===== ナビゲーション =====
+// ===== Navigation Functions =====
 function prevQuestion() {
     if (index.value > 0) {
         index.value--;
@@ -282,13 +179,13 @@ function nextQuestion() {
     }
 }
 
-// ===== ウォッチ・初期化 =====
+// ===== Lifecycle =====
 watch([questions, index], async () => {
     setCurrentQA();
     resetSqlAndAi();
     if (currentQA.value.dbs.length > 0) {
-        await createUserCopyTables();
-        await createAnswerCopyTables();
+        await createUserCopyTables(currentQA.value.dbs);
+        await createAnswerCopyTables(currentQA.value.dbs);
     }
 });
 
@@ -297,8 +194,8 @@ onMounted(async () => {
     await loadDatabases();
     setRouteParams();
     setCurrentQA();
-    await createUserCopyTables();
-    await createAnswerCopyTables();
+    await createUserCopyTables(currentQA.value.dbs);
+    await createAnswerCopyTables(currentQA.value.dbs);
 });
 </script>
 
