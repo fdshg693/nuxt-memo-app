@@ -18,8 +18,8 @@ export const matchSqlKeyword = (text: string, keyword: string): boolean => {
     case 'join':
       return (
         lowerText.includes('結合') ||
-        lowerText.includes('inner') ||
-        lowerText.includes('left')
+        lowerText.includes('inner join') ||
+        lowerText.includes('left join')
       );
     case 'where':
       return lowerText.includes('条件') || lowerText.includes('絞り込み');
