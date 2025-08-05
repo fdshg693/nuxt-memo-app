@@ -2,7 +2,7 @@ export const matchSqlKeyword = (text: string, keyword: string): boolean => {
   const lowerText = text.toLowerCase();
   const lowerKeyword = keyword.toLowerCase();
 
-  if (lowerText.includes(lowerKeyword)) {
+  if (new RegExp(`\\b${lowerKeyword}\\b`, 'i').test(text)) {
     return true;
   }
 
