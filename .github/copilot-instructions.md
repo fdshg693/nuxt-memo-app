@@ -1,3 +1,6 @@
+## UPDATE
+Dont forget to update this file whenever the content is wrong or becomes wrong from your change
+
 # Copilot Instructions for Nuxt Memo App
 
 ## Project Overview
