@@ -1,0 +1,17 @@
+[
+  {
+    "name": "users",
+    "columns": ["id", "name", "age"],
+    "rows": [
+      {"id": 1, "name": "Alice", "age": 25},
+      {"id": 2, "name": "Bob", "age": 30}
+    ]
+  },
+  {
+    "name": "customers",
+    "columns": ["id", "customer_name", "city"],
+    "rows": [
+      {"id": 1, "customer_name": "Test Customer", "city": "Tokyo"}
+    ]
+  }
+]

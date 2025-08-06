@@ -1,0 +1,20 @@
+[
+  {
+    "id": 1,
+    "level": 1,
+    "genre": "SELECT",
+    "subgenre": "WHERE",
+    "question": "テスト用問題",
+    "answer": "SELECT name FROM users WHERE age > 25",
+    "DbName": "users"
+  },
+  {
+    "id": 2,
+    "level": 2,
+    "genre": "SELECT", 
+    "subgenre": "ORDER BY",
+    "question": "年齢順にユーザーを取得",
+    "answer": "SELECT * FROM users ORDER BY age",
+    "DbName": "users"
+  }
+]
