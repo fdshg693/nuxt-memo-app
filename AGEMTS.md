@@ -1,8 +1,6 @@
 ## UPDATE
 Dont forget to update this file whenever the content is wrong or becomes wrong from your change
 
-# Copilot Instructions for Nuxt Memo App
-
 ## Project Overview
 This is a Japanese educational web app built with Nuxt 3 for learning SQL, quizzes, and games. The app uses in-browser SQL execution via AlaSQL and integrates OpenAI for SQL assistance.
 
