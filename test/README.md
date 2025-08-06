@@ -27,7 +27,9 @@ test/
 │       ├── useSqlDb.test.ts
 │       └── useAuth.test.ts
 ├── integration/              # 統合テスト
-│   └── sql-data-integration.test.ts
+│   ├── sql-data-integration.test.ts
+│   ├── alasql-integration.test.ts   # AlaSQL統合テスト
+│   └── openai-api-integration.test.ts # OpenAI API統合テスト
 ├── utils/                    # テストユーティリティ
 │   ├── test-helpers.ts       # ヘルパー関数
 │   └── test-helpers.test.ts  # ヘルパー関数のテスト
@@ -89,6 +91,22 @@ npm run test:coverage
    - データベース参照の有効性
    - 問題データ構造の検証
 
+2. **AlaSQL Integration** - SQL実行エンジンテスト
+   - データベース初期化テスト
+   - テーブル作成とデータ挿入
+   - SQL クエリ実行（SELECT, JOIN, 集約など）
+   - エラーハンドリング
+   - 複雑なクエリ処理
+   - 様々なデータ型の処理
+
+3. **OpenAI API Integration** - AI機能テスト
+   - SQL関連プロンプトの検証
+   - プロンプトインジェクション対策
+   - 文字数制限チェック
+   - プリセットプロンプトの受け入れ
+   - SQLキーワード検証
+   - リクエスト構造の検証
+
 ### ユーティリティテスト
 1. **Test Helpers** - テストヘルパー関数
    - モックデータ生成関数
@@ -100,7 +118,7 @@ npm run test:coverage
 現在のテストカバレッジ:
 - **コンポーネント**: 主要コンポーネント（SqlEditor, DatabaseTable, ResultTable）
 - **コンポーザブル**: 中核的なコンポーザブル（useSqlQuiz, useSqlDb, useAuth）
-- **統合テスト**: データ整合性とワークフロー
+- **統合テスト**: データ整合性、AlaSQL実行エンジン、OpenAI API機能
 - **ユーティリティ**: テストヘルパー関数
 
 ## 特徴
@@ -125,9 +143,35 @@ npm run test:coverage
 このテスト基盤を基に、以下の拡張が可能です:
 
 1. **E2Eテスト** - Playwrightを使用した完全なユーザーワークフロー
-2. **SQL実行テスト** - AlaSQL統合のテスト
-3. **AIインテグレーションテスト** - OpenAI API連携のテスト
-4. **パフォーマンステスト** - 大量データでの動作テスト
+2. **パフォーマンステスト** - 大量データでの動作テスト
+3. **APIエンドポイントテスト** - 実際のHTTPリクエスト/レスポンステスト
+4. **セキュリティテスト** - より高度なプロンプトインジェクション対策テスト
+
+## 新規追加されたテスト
+
+### AlaSQL統合テスト (`alasql-integration.test.ts`)
+- **目的**: SQLクエリ実行エンジンの動作を検証
+- **テスト内容**:
+  - データベース初期化プロセス
+  - JSONデータからのテーブル作成
+  - 基本的なSQL操作（SELECT, INSERT, WHERE, ORDER BY, 集約関数）
+  - JOIN操作を含む複雑なクエリ
+  - SQLエラーハンドリング
+  - 様々なデータ型（文字列、数値、ブール、NULL）の処理
+  - `sqlDatabases.json`からの全テーブル初期化
+
+### OpenAI API統合テスト (`openai-api-integration.test.ts`)
+- **目的**: AI機能の入力検証とセキュリティを確保
+- **テスト内容**:
+  - 非SQL関連プロンプトの拒否
+  - プロンプトインジェクション攻撃の検出と防止
+  - SQL関連キーワードの認識
+  - プリセットプロンプトの受け入れ
+  - 文字数制限の実装
+  - 空/未定義プロンプトの処理
+  - 大文字小文字混在SQLキーワードの処理
+  - モックレスポンス生成ロジック
+  - APIリクエスト構造の検証
 
 ## 参考
 
