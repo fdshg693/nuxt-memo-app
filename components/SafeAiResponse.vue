@@ -1,25 +1,9 @@
 <template>
-  <span>
-    <template v-for="(part, index) in parsedResponse" :key="index">
-      <NuxtLink
-        v-if="part.type === 'link'"
-        :to="part.url"
-        target="_blank"
-        class="text-blue-600 hover:text-blue-800 underline"
-      >
-        {{ part.text }}
-      </NuxtLink>
-      <span v-else>{{ part.text }}</span>
-    </template>
-  </span>
+  <div class="markdown-content" v-html="renderedMarkdown"></div>
 </template>
 
 <script setup lang="ts">
-interface ResponsePart {
-  type: 'text' | 'link'
-  text: string
-  url?: string
-}
+import { marked } from 'marked'
 
 interface Props {
   response: string
@@ -27,47 +11,82 @@ interface Props {
 
 const props = defineProps<Props>()
 
-const parsedResponse = computed((): ResponsePart[] => {
-  const parts: ResponsePart[] = []
-  const text = props.response
-  let lastIndex = 0
+const renderedMarkdown = computed(() => {
+  if (!props.response) return ''
   
-  // Regular expression to match markdown links [text](url)
-  const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g
-  let match
+  // Parse the markdown and return HTML
+  let html = marked.parse(props.response, {
+    breaks: true, // Convert line breaks to <br>
+    gfm: true,    // GitHub Flavored Markdown
+  })
   
-  while ((match = linkRegex.exec(text)) !== null) {
-    // Add text before the link
-    if (match.index > lastIndex) {
-      const beforeText = text.slice(lastIndex, match.index)
-      if (beforeText) {
-        parts.push({ type: 'text', text: beforeText })
-      }
-    }
-    
-    // Add the link
-    parts.push({
-      type: 'link',
-      text: match[1], // link text
-      url: match[2]   // link URL
-    })
-    
-    lastIndex = match.index + match[0].length
-  }
+  // Post-process to add target="_blank" to all links
+  html = html.replace(/<a href="/g, '<a href="')
+                 .replace(/<a href="([^"]*)"([^>]*)>/g, '<a href="$1" target="_blank" class="text-blue-600 hover:text-blue-800 underline"$2>')
   
-  // Add remaining text after the last link
-  if (lastIndex < text.length) {
-    const remainingText = text.slice(lastIndex)
-    if (remainingText) {
-      parts.push({ type: 'text', text: remainingText })
-    }
-  }
-  
-  // If no links were found, return the entire text as a single part
-  if (parts.length === 0) {
-    parts.push({ type: 'text', text: text })
-  }
-  
-  return parts
+  return html
 })
 </script>
+
+<style scoped>
+.markdown-content {
+  @apply text-inherit;
+}
+
+/* Markdown styling */
+.markdown-content :deep(h1) {
+  @apply text-xl font-bold mb-2 mt-3 first:mt-0;
+}
+
+.markdown-content :deep(h2) {
+  @apply text-lg font-bold mb-2 mt-3 first:mt-0;
+}
+
+.markdown-content :deep(h3) {
+  @apply text-base font-bold mb-1 mt-2 first:mt-0;
+}
+
+.markdown-content :deep(p) {
+  @apply mb-2 last:mb-0;
+}
+
+.markdown-content :deep(strong) {
+  @apply font-bold;
+}
+
+.markdown-content :deep(em) {
+  @apply italic;
+}
+
+.markdown-content :deep(code) {
+  @apply bg-gray-100 px-1 py-0.5 rounded text-sm font-mono;
+}
+
+.markdown-content :deep(pre) {
+  @apply bg-gray-100 p-3 rounded my-2 overflow-x-auto;
+}
+
+.markdown-content :deep(pre code) {
+  @apply bg-transparent p-0;
+}
+
+.markdown-content :deep(ul) {
+  @apply list-disc ml-4 mb-2;
+}
+
+.markdown-content :deep(ol) {
+  @apply list-decimal ml-4 mb-2;
+}
+
+.markdown-content :deep(li) {
+  @apply mb-1;
+}
+
+.markdown-content :deep(blockquote) {
+  @apply border-l-4 border-gray-300 pl-4 italic my-2;
+}
+
+.markdown-content :deep(hr) {
+  @apply border-gray-300 my-3;
+}
+</style>
