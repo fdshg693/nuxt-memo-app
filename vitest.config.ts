@@ -7,7 +7,7 @@ export default defineVitestConfig({
     setupFiles: ['./test/setup.ts'],
     globals: true,
     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-    exclude: ['node_modules', '.nuxt', 'dist', '.output'],
+    exclude: ['node_modules', '.nuxt', 'dist', '.output', 'test/e2e/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
