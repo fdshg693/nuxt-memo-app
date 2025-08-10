@@ -9,7 +9,7 @@ export default defineEventHandler(async (event) => {
     if (email === '1@gmail.com' && password === '1234') {
         const username = 'テストユーザー'; // 固定のユーザー名
         
-        // セッションIDを生成
+        // セッションIDを生成（データベースに永続化）
         const sessionId = sessionStore.createSession(email, username);
         
         // HttpOnly、Secure、SameSite cookieをセット（JavaScriptからアクセス不可）

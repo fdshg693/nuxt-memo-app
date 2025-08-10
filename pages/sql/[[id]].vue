@@ -145,7 +145,7 @@ async function executeUserSQL() {
     isCorrect.value = null;
 }
 
-function checkAnswer() {
+async function checkAnswer() {
     checkAnswerComposable(
         result,
         correctResult,
@@ -157,7 +157,7 @@ function checkAnswer() {
     if (isCorrect.value === true && isLoggedIn.value) {
         const currentQuestion = questions.value.find(q => q.id === index.value);
         if (currentQuestion) {
-            recordCorrectAnswer(
+            await recordCorrectAnswer(
                 currentQuestion.id,
                 currentQuestion.genre,
                 currentQuestion.subgenre,

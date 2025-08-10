@@ -19,11 +19,42 @@ export interface UserProgress {
 }
 
 export const useUserProgress = () => {
-    // Use localStorage to persist user progress data
-    const userProgress = useCookie<UserProgress | null>('user_progress');
+    // Keep local state for immediate UI updates
+    const userProgress = ref<UserProgress | null>(null);
 
-    const initializeProgress = (username: string) => {
-        if (!userProgress.value || userProgress.value.username !== username) {
+    const initializeProgress = async (username: string) => {
+        // Try to load progress from server first
+        try {
+            await loadProgressFromServer();
+        } catch (error) {
+            console.warn('Failed to load progress from server, using local storage:', error);
+            // Fallback to local storage for offline support
+            loadProgressFromLocal(username);
+        }
+    };
+
+    const loadProgressFromServer = async (): Promise<void> => {
+        const response = await fetch('/api/user/progress', {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            userProgress.value = data;
+            // Also save to local storage as backup
+            saveProgressToLocal(data);
+        } else {
+            throw new Error('Failed to load progress from server');
+        }
+    };
+
+    const loadProgressFromLocal = (username: string) => {
+        const localData = useCookie<UserProgress | null>('user_progress');
+        if (!localData.value || localData.value.username !== username) {
             userProgress.value = {
                 username,
                 correctAnswers: [],
@@ -32,10 +63,17 @@ export const useUserProgress = () => {
                     lastActivity: new Date().toISOString()
                 }
             };
+        } else {
+            userProgress.value = localData.value;
         }
     };
 
-    const recordCorrectAnswer = (questionId: number, genre?: string, subgenre?: string, level?: number) => {
+    const saveProgressToLocal = (data: UserProgress) => {
+        const localData = useCookie<UserProgress | null>('user_progress');
+        localData.value = data;
+    };
+
+    const recordCorrectAnswer = async (questionId: number, genre?: string, subgenre?: string, level?: number) => {
         if (!userProgress.value) return;
 
         // Check if this question was already answered correctly
@@ -52,11 +90,36 @@ export const useUserProgress = () => {
                 level
             };
 
+            // Update local state immediately for responsive UI
             userProgress.value.correctAnswers.push(newAnswer);
             userProgress.value.stats.totalCorrect++;
         }
         
         userProgress.value.stats.lastActivity = new Date().toISOString();
+
+        // Save to server in background
+        try {
+            const response = await fetch('/api/user/progress', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ questionId, genre, subgenre, level })
+            });
+
+            if (!response.ok) {
+                console.warn('Failed to save progress to server');
+            }
+
+            // Also save to local storage as backup
+            saveProgressToLocal(userProgress.value);
+        } catch (error) {
+            console.warn('Error saving progress to server:', error);
+            // Save to local storage as fallback
+            saveProgressToLocal(userProgress.value);
+        }
     };
 
     const isQuestionAnsweredCorrectly = (questionId: number): boolean => {
@@ -80,8 +143,37 @@ export const useUserProgress = () => {
         return genreStats;
     };
 
-    const clearProgress = () => {
-        userProgress.value = null;
+    const clearProgress = async (): Promise<boolean> => {
+        try {
+            const response = await fetch('/api/user/reset', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            if (response.ok) {
+                // Clear local state
+                if (userProgress.value) {
+                    userProgress.value.correctAnswers = [];
+                    userProgress.value.stats.totalCorrect = 0;
+                    userProgress.value.stats.lastActivity = new Date().toISOString();
+                }
+                
+                // Clear local storage
+                const localData = useCookie<UserProgress | null>('user_progress');
+                localData.value = null;
+                
+                return true;
+            } else {
+                console.error('Failed to reset progress on server');
+                return false;
+            }
+        } catch (error) {
+            console.error('Error resetting progress:', error);
+            return false;
+        }
     };
 
     const progress = computed(() => userProgress.value);
@@ -96,6 +188,7 @@ export const useUserProgress = () => {
         recordCorrectAnswer,
         isQuestionAnsweredCorrectly,
         getProgressByGenre,
-        clearProgress
+        clearProgress,
+        loadProgressFromServer
     };
 };

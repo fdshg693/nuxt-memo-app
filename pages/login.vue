@@ -54,7 +54,7 @@ const onSubmit = async () => {
         if (result.success) {
             console.log('Login successful, initializing progress...');
             // ユーザー進捗を初期化（メールアドレスをユーザーIDとして使用）
-            initializeProgress(form.email);
+            await initializeProgress(form.email);
             
             console.log('Redirecting to home page...');
             // ホームページに遷移
