@@ -82,7 +82,7 @@ const groupedQuestions = computed(() => {
 });
 
 const logout = async () => {
-    authLogout();
+    await authLogout();
     clearProgress();
     await router.push('/login');
 };

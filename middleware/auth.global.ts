@@ -1,12 +1,16 @@
 // middleware/auth.global.ts
-import type { NavigationGuard } from 'vue-router';
-import { useAuth } from '~/composables/useAuth';
+export default defineNuxtRouteMiddleware(async (to, from) => {
+    // Skip middleware on server side to avoid initialization issues
+    if (process.server) return;
+    
+    const { isLoggedIn, checkAuth } = useAuth();
 
-export default defineNuxtRouteMiddleware((to, from) => {
-    const { isLoggedIn } = useAuth();
-
-    // ログインしていない状態で /janken など保護ルートにアクセスしたら /login へリダイレクト
-    if (!isLoggedIn.value && to.path.startsWith('/janken')) {
-        return navigateTo('/login');
+    // /profile や /janken など保護ルートにアクセスする場合
+    if (to.path.startsWith('/profile') || to.path.startsWith('/janken')) {
+        // セッション状態をチェック
+        const isAuthenticated = await checkAuth();
+        if (!isAuthenticated) {
+            return navigateTo('/login');
+        }
     }
 });

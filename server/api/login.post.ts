@@ -1,45 +1,29 @@
 // server/api/login.post.ts
 import { defineEventHandler, readBody, setCookie } from 'h3';
+import { sessionStore } from '~/server/utils/sessionStore';
 
 export default defineEventHandler(async (event) => {
-    const { username, email, password } = await readBody<{ username: string; email: string; password: string }>(event);
+    const { email, password } = await readBody<{ email: string; password: string }>(event);
 
-    // ダミー認証ロジック - 実際の環境では適切な認証を実装
-    if (email === 'user@example.com' && password === 'password123') {
-        const fakeToken = 'abcdefg1234567'; // 実際は JWT を生成
+    // 本番用の認証ロジック - メールアドレス「1@gmail.com」、パスワード「1234」のみ許可
+    if (email === '1@gmail.com' && password === '1234') {
+        const username = 'テストユーザー'; // 固定のユーザー名
         
-        // クッキーにトークンをセット（httpOnly: false で client-side からアクセス可能）
-        setCookie(event, 'auth_token', fakeToken, {
-            httpOnly: false, // Client-side access を有効にする
-            secure: process.env.NODE_ENV === 'production',
+        // セッションIDを生成
+        const sessionId = sessionStore.createSession(email, username);
+        
+        // HttpOnly、Secure、SameSite cookieをセット（JavaScriptからアクセス不可）
+        setCookie(event, 'session', sessionId, {
+            httpOnly: true, // JavaScript からアクセス不可（セキュリティ向上）
+            secure: false, // 開発環境では false に設定
             maxAge: 60 * 60 * 24 * 7, // 7日
             path: '/',
-            sameSite: 'lax'
+            sameSite: 'lax',
+            domain: undefined // 開発環境では明示的にドメインを設定しない
         });
         
         return { 
-            token: fakeToken,
-            user: {
-                username: username || 'デフォルトユーザー',
-                email: email
-            }
-        };
-    }
-
-    // 簡単なダミー認証 - usernameが入力されていれば認証成功とする（開発用）
-    if (username && username.trim().length > 0) {
-        const fakeToken = `token_${Date.now()}`;
-        
-        setCookie(event, 'auth_token', fakeToken, {
-            httpOnly: false, // Client-side access を有効にする
-            secure: process.env.NODE_ENV === 'production',
-            maxAge: 60 * 60 * 24 * 7, // 7日
-            path: '/',
-            sameSite: 'lax'
-        });
-        
-        return { 
-            token: fakeToken,
+            success: true,
             user: {
                 username: username,
                 email: email
@@ -47,6 +31,10 @@ export default defineEventHandler(async (event) => {
         };
     }
 
+    // 認証失敗
     event.res.statusCode = 401;
-    return { message: 'ユーザー名、メールアドレスまたはパスワードが正しくありません' };
+    return { 
+        success: false,
+        message: 'メールアドレスまたはパスワードが正しくありません' 
+    };
 });

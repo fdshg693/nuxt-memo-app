@@ -100,13 +100,16 @@ import { useAuth } from '~/composables/useAuth';
 import { useUserProgress } from '~/composables/useUserProgress';
 
 const router = useRouter();
-const { userProfile, logout: authLogout, isLoggedIn } = useAuth();
+const { userProfile, logout: authLogout, isLoggedIn, checkAuth } = useAuth();
 const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, clearProgress } = useUserProgress();
 
-// Redirect if not logged in
-if (!isLoggedIn.value) {
-    await router.push('/login');
-}
+// Check authentication status and redirect if not logged in
+onMounted(async () => {
+    const isAuthenticated = await checkAuth();
+    if (!isAuthenticated) {
+        await router.push('/login');
+    }
+});
 
 const genreProgress = computed(() => getProgressByGenre());
 
@@ -128,7 +131,7 @@ const formatDate = (dateString: string) => {
 };
 
 const logout = async () => {
-    authLogout();
+    await authLogout();
     clearProgress();
     await router.push('/login');
 };
