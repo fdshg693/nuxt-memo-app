@@ -19,15 +19,15 @@ export default defineNuxtConfig({
   plugins: [
     '~/plugins/global-css.ts',
   ],
-  // Security headers configuration
-  routeRules: {
-    // Apply security headers to all routes
+  // Security headers configuration - relaxed for development
+  routeRules: process.env.NODE_ENV === 'production' ? {
+    // Apply strict security headers in production only
     '/**': {
       headers: {
         // Content Security Policy - strict policy for main app
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' blob:; object-src 'none'; base-uri 'none'; worker-src blob:; child-src 'self'; frame-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self'",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' blob: 'unsafe-inline'; object-src 'none'; base-uri 'none'; worker-src blob:; child-src 'self'; frame-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self'",
         // Permissions Policy - disable all unnecessary features
-        'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), bluetooth=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), screen-wake-lock=()',
+        'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), screen-wake-lock=()',
         // Other security headers
         'Referrer-Policy': 'no-referrer',
         'X-Content-Type-Options': 'nosniff',
@@ -42,6 +42,16 @@ export default defineNuxtConfig({
       headers: {
         'X-Frame-Options': 'DENY',
         'Cross-Origin-Resource-Policy': 'same-origin'
+      }
+    }
+  } : {
+    // Development mode - more permissive CSP for Vite HMR
+    '/**': {
+      headers: {
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' blob: 'unsafe-inline' 'unsafe-eval'; object-src 'none'; worker-src blob:; child-src 'self'; frame-src 'self'; connect-src 'self' ws: wss:; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'",
+        'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), payment=()',
+        'Referrer-Policy': 'no-referrer',
+        'X-Content-Type-Options': 'nosniff'
       }
     }
   },
