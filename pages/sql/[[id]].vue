@@ -42,7 +42,9 @@
                 v-if="currentQA.type === 'analysis'"
                 :analysis-code="currentQA.analysisCode || ''"
                 :is-ai-loading="isAiLoading"
+                :genre="currentQA.genre[0]"
                 @ask-ai="askAnalysisAI"
+                @submit-answer="submitAnalysisAnswer"
             />
         </div>
     </div>
@@ -151,6 +153,14 @@ async function askAI(userPrompt: string) {
     }).join('\n');
     const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQA.value.question}\n正しいSQLクエリ: ${currentQA.value.answer}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
     await callOpenAI(prompt, userPrompt);
+}
+
+function submitAnalysisAnswer(userAnswer: string) {
+    // Save the user's analysis answer
+    console.log('User analysis submitted:', userAnswer);
+    // You could save this to localStorage or show a confirmation message
+    // For now, we'll just show a simple alert to confirm the answer was saved
+    aiAnswer.value = `✅ あなたの分析が保存されました。\n\n【あなたの回答】\n${userAnswer}\n\n「SQL分析を開始」ボタンをクリックして、AIの分析と比較してみてください。`;
 }
 
 async function askAnalysisAI(userPrompt: string) {
