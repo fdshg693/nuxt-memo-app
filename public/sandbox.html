@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Sandbox</title>
+    <!-- Strict CSP for sandbox -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:; connect-src 'none'; img-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none';">
+    <!-- Permissions Policy -->
+    <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), payment=()">
+</head>
+<body>
+    <script>
+        // Secure JavaScript execution sandbox
+        let currentWorker = null;
+        let executionCount = 0;
+        const maxExecutionsPerMinute = 10;
+        const maxConcurrentExecutions = 1;
+        const executionTimeout = 5000; // 5 seconds
+        
+        // Rate limiting
+        const executions = [];
+        
+        function checkRateLimit() {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            
+            // Remove old executions
+            while (executions.length > 0 && executions[0] < oneMinuteAgo) {
+                executions.shift();
+            }
+            
+            return executions.length < maxExecutionsPerMinute;
+        }
+        
+        function recordExecution() {
+            executions.push(Date.now());
+        }
+        
+        // Message handler for communication with parent
+        window.addEventListener('message', function(event) {
+            if (event.data.type === 'execute') {
+                executeCode(event.data.code, event.data.requestId);
+            } else if (event.data.type === 'terminate') {
+                terminateExecution();
+            }
+        });
+        
+        function executeCode(code, requestId) {
+            // Rate limiting check
+            if (!checkRateLimit()) {
+                parent.postMessage({
+                    type: 'error',
+                    requestId: requestId,
+                    error: 'レート制限に達しました。1分間に最大10回まで実行できます。'
+                }, '*');
+                return;
+            }
+            
+            // Check for concurrent execution
+            if (currentWorker) {
+                parent.postMessage({
+                    type: 'error',
+                    requestId: requestId,
+                    error: '既に実行中のコードがあります。終了してから再度実行してください。'
+                }, '*');
+                return;
+            }
+            
+            recordExecution();
+            
+            try {
+                // Create worker blob with security overrides
+                const workerCode = `
+                    // Override dangerous APIs to prevent network access and other security issues
+                    fetch = undefined;
+                    XMLHttpRequest = undefined;
+                    WebSocket = undefined;
+                    EventSource = undefined;
+                    importScripts = undefined;
+                    WebAssembly = undefined;
+                    
+                    // Override global object access attempts
+                    Object.defineProperty(self, 'window', { value: undefined, writable: false });
+                    Object.defineProperty(self, 'document', { value: undefined, writable: false });
+                    Object.defineProperty(self, 'parent', { value: undefined, writable: false });
+                    Object.defineProperty(self, 'top', { value: undefined, writable: false });
+                    
+                    // Secure console implementation
+                    const logs = [];
+                    const maxLogs = 100;
+                    
+                    const secureConsole = {
+                        log: (...args) => {
+                            if (logs.length >= maxLogs) {
+                                logs.shift();
+                            }
+                            logs.push({
+                                type: 'log',
+                                args: args.map(arg => {
+                                    if (typeof arg === 'object' && arg !== null) {
+                                        try {
+                                            return JSON.stringify(arg, null, 2);
+                                        } catch {
+                                            return '[Object]';
+                                        }
+                                    }
+                                    return String(arg);
+                                }).join(' ')
+                            });
+                        },
+                        error: (...args) => {
+                            if (logs.length >= maxLogs) {
+                                logs.shift();
+                            }
+                            logs.push({
+                                type: 'error',
+                                args: args.map(arg => String(arg)).join(' ')
+                            });
+                        },
+                        warn: (...args) => {
+                            if (logs.length >= maxLogs) {
+                                logs.shift();
+                            }
+                            logs.push({
+                                type: 'warn',
+                                args: args.map(arg => String(arg)).join(' ')
+                            });
+                        }
+                    };
+                    
+                    // Replace console
+                    console = secureConsole;
+                    
+                    // Message handler for code execution
+                    self.onmessage = function(e) {
+                        if (e.data.type === 'execute') {
+                            try {
+                                // Clear previous logs
+                                logs.length = 0;
+                                
+                                // Execute user code in a try-catch
+                                eval(e.data.code);
+                                
+                                // Send results back
+                                self.postMessage({
+                                    type: 'result',
+                                    requestId: e.data.requestId,
+                                    logs: logs.slice()
+                                });
+                            } catch (error) {
+                                self.postMessage({
+                                    type: 'error',
+                                    requestId: e.data.requestId,
+                                    error: error.message || 'エラーが発生しました'
+                                });
+                            }
+                        }
+                    };
+                `;
+                
+                const blob = new Blob([workerCode], { type: 'application/javascript' });
+                const workerUrl = URL.createObjectURL(blob);
+                
+                currentWorker = new Worker(workerUrl);
+                
+                // Set up timeout
+                const timeoutId = setTimeout(() => {
+                    if (currentWorker) {
+                        currentWorker.terminate();
+                        currentWorker = null;
+                        URL.revokeObjectURL(workerUrl);
+                        parent.postMessage({
+                            type: 'error',
+                            requestId: requestId,
+                            error: 'コードの実行がタイムアウトしました（5秒制限）'
+                        }, '*');
+                    }
+                }, executionTimeout);
+                
+                // Handle worker messages
+                currentWorker.onmessage = function(e) {
+                    clearTimeout(timeoutId);
+                    currentWorker = null;
+                    URL.revokeObjectURL(workerUrl);
+                    
+                    parent.postMessage({
+                        type: e.data.type,
+                        requestId: e.data.requestId,
+                        logs: e.data.logs,
+                        error: e.data.error
+                    }, '*');
+                };
+                
+                // Handle worker errors
+                currentWorker.onerror = function(error) {
+                    clearTimeout(timeoutId);
+                    currentWorker = null;
+                    URL.revokeObjectURL(workerUrl);
+                    
+                    parent.postMessage({
+                        type: 'error',
+                        requestId: requestId,
+                        error: 'Workerエラーが発生しました'
+                    }, '*');
+                };
+                
+                // Send code to worker
+                currentWorker.postMessage({
+                    type: 'execute',
+                    code: code,
+                    requestId: requestId
+                });
+                
+            } catch (error) {
+                parent.postMessage({
+                    type: 'error',
+                    requestId: requestId,
+                    error: 'サンドボックスエラーが発生しました'
+                }, '*');
+            }
+        }
+        
+        function terminateExecution() {
+            if (currentWorker) {
+                currentWorker.terminate();
+                currentWorker = null;
+            }
+        }
+        
+        // Report sandbox is ready
+        parent.postMessage({ type: 'ready' }, '*');
+    </script>
+</body>
+</html>
