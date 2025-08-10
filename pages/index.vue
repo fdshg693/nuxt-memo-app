@@ -27,6 +27,7 @@
     <NuxtLink to="janken" class="btn-gradient mb-8">ジャンケン</NuxtLink>
     <NuxtLink to="quiz" class="btn-gradient">クイズ</NuxtLink>
     <NuxtLink to="sql" class="btn-gradient mb-8">SQL</NuxtLink>
+    <NuxtLink to="playground" class="btn-gradient mb-8">JavaScriptプレイグラウンド</NuxtLink>
     <NuxtLink to="sql/allTables" class="btn-gradient mb-8">SQLで使うテーブルの一覧</NuxtLink>
     <NuxtLink to="sql/explanation" class="btn-gradient mb-8">SQL文の説明</NuxtLink>
     <NuxtLink v-if="isLoggedIn" to="/profile" class="btn-gradient mb-8 bg-gradient-to-r from-purple-600 to-indigo-600">マイプロフィール</NuxtLink>
