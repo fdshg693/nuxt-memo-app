@@ -25,7 +25,7 @@ export default defineNuxtConfig({
     '/**': {
       headers: {
         // Content Security Policy - strict policy for main app
-        'Content-Security-Policy': "default-src 'self'; script-src 'self' blob: 'unsafe-inline'; object-src 'none'; base-uri 'none'; worker-src blob:; child-src 'self'; frame-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self'",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' blob: 'unsafe-inline' 'unsafe-eval'; object-src 'none'; base-uri 'none'; worker-src blob:; child-src 'self'; frame-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; font-src 'self'; media-src 'self'",
         // Permissions Policy - disable all unnecessary features
         'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), clipboard-read=(), clipboard-write=(), usb=(), serial=(), payment=(), accelerometer=(), gyroscope=(), magnetometer=(), fullscreen=(self), screen-wake-lock=()',
         // Other security headers
