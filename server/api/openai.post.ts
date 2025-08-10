@@ -1,6 +1,7 @@
 // server/api/openai.post.ts
 import { defineEventHandler, readBody } from 'h3'
-import { useSqlExplanationLinks } from '#imports'
+
+import { useSqlExplanationLinks } from '~/composables/useSqlExplanationLinks'
 
 export default defineEventHandler(async (event) => {
     const { prompt, sqlQuery, question, userPrompt } = await readBody(event)
