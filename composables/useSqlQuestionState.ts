@@ -20,7 +20,7 @@ interface QuestionAnswer {
 
 export const useSqlQuestionState = () => {
   // Question and routing state
-  const index = ref(1);
+  const index = ref(0); // Default to 0 so no question matches until route is parsed
   
   // SQL and AI state
   const sql = ref('');

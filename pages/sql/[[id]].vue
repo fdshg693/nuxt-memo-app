@@ -21,13 +21,6 @@
                 :ai-error-display="aiErrorDisplay"
             />
 
-            <!-- DEBUG INFO -->
-            <div class="mb-4 p-2 bg-yellow-100 rounded">
-                <p>Debug: currentQA.type = "{{ currentQA.type }}"</p>
-                <p>Debug: Should show analysis = {{ currentQA.type === 'analysis' }}</p>
-                <p>Debug: Should show execution = {{ currentQA.type === 'execution' }}</p>
-            </div>
-
             <!-- SQL Execution Panel (for traditional questions) -->
             <SqlExecutionPanel
                 v-if="currentQA.type === 'execution'"
@@ -102,7 +95,12 @@ const {
 // ===== Utility Functions =====
 function setRouteParams() {
     const id = route.params.id;
-    index.value = id == '' ? 1 : Number(id);
+    if (!id || id === '' || (Array.isArray(id) && id.length === 0)) {
+        index.value = 1;
+    } else {
+        const numId = Array.isArray(id) ? Number(id[0]) : Number(id);
+        index.value = isNaN(numId) ? 1 : numId;
+    }
 }
 
 function setCurrentQA() {
