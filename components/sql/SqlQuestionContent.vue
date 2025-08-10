@@ -2,7 +2,12 @@
   <div>
     <!-- Question title -->
     <div v-if="currentQA.question" class="mb-4">
-      <h2 class="text-xl font-bold text-indigo-700 mb-2">{{ currentQA.question }}</h2>
+      <div class="flex items-center gap-2 mb-2">
+        <h2 class="text-xl font-bold text-indigo-700">{{ currentQA.question }}</h2>
+        <div v-if="alreadyAnswered" class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full font-medium">
+          ✓ 正解済み
+        </div>
+      </div>
     </div>
 
     <!-- Question navigation -->
@@ -44,6 +49,7 @@ defineProps<{
   currentQA: QuestionAnswer;
   index: number;
   questionsLength: number;
+  alreadyAnswered?: boolean;
 }>();
 
 defineEmits<{
