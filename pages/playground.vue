@@ -1,7 +1,7 @@
 <template>
     <div class="container mx-auto px-4 py-8">
         <div class="max-w-4xl mx-auto">
-            <h1 class="text-3xl font-bold text-center mb-8 text-indigo-700">JavaScriptプレイグラウンド</h1>
+            <h1 class="text-3xl font-bold text-center mb-8 text-indigo-700">安全なJavaScriptプレイグラウンド</h1>
             
             <!-- Navigation back to home -->
             <div class="mb-6">
@@ -10,26 +10,17 @@
                 </NuxtLink>
             </div>
 
-            <!-- JavaScript Editor -->
-            <JavaScriptEditor v-model="code" @execute="executeCode" @clear="clearResults" />
-
-            <!-- Results Section -->
-            <div v-if="results.length > 0" class="border-2 border-green-400 rounded-lg p-4 mb-6 bg-green-50">
-                <h3 class="text-lg font-bold mb-2 text-green-700">実行結果</h3>
-                <div v-for="(result, index) in results" :key="index" class="mb-2">
-                    <div class="font-mono text-sm bg-white p-2 rounded border border-green-200">
-                        {{ result }}
-                    </div>
-                </div>
+            <!-- Security Notice -->
+            <div class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 class="text-lg font-bold mb-2 text-blue-700">🔒 セキュリティ強化済み</h3>
+                <p class="text-blue-800 text-sm">
+                    このプレイグラウンドは厳格なセキュリティ対策を実装しており、コードは完全に隔離された環境で実行されます。
+                    ネットワークアクセス、DOM操作、危険なAPIは全て無効化されています。
+                </p>
             </div>
 
-            <!-- Error Section -->
-            <div v-if="error" class="border-2 border-red-400 rounded-lg p-4 mb-6 bg-red-50">
-                <h3 class="text-lg font-bold mb-2 text-red-700">エラー</h3>
-                <div class="font-mono text-sm bg-white p-2 rounded border border-red-200 text-red-600">
-                    {{ error }}
-                </div>
-            </div>
+            <!-- Secure JavaScript Editor -->
+            <SecureJavaScriptEditor v-model="code" />
 
             <!-- Instructions -->
             <div class="border-2 border-blue-400 rounded-lg p-4 bg-blue-50">
@@ -37,17 +28,33 @@
                 <ul class="text-blue-800 space-y-1">
                     <li>• 上のテキストエリアにJavaScriptコードを入力してください</li>
                     <li>• console.log()を使用すると結果が表示されます</li>
-                    <li>• 「実行」ボタンでコードを実行します</li>
+                    <li>• 「安全実行」ボタンでコードを実行します（最大5秒、1分間10回制限）</li>
+                    <li>• 「停止」ボタンで実行中のコードを強制終了できます</li>
                     <li>• 「クリア」ボタンで結果をクリアします</li>
                 </ul>
                 <div class="mt-3 p-3 bg-blue-100 rounded border border-blue-300">
-                    <h4 class="font-bold text-blue-800 mb-1">例:</h4>
-                    <code class="text-blue-700 text-sm">
-                        console.log("Hello World!");<br>
-                        let x = 5;<br>
-                        let y = 10;<br>
-                        console.log("x + y =", x + y);
-                    </code>
+                    <h4 class="font-bold text-blue-800 mb-1">安全な例:</h4>
+                    <code class="text-blue-700 text-sm block whitespace-pre-line">console.log("Hello World!");
+
+// 変数と計算
+let x = 5;
+let y = 10;
+console.log("x + y =", x + y);
+
+// 配列操作
+let numbers = [1, 2, 3, 4, 5];
+console.log("配列:", numbers);
+console.log("合計:", numbers.reduce((a, b) => a + b, 0));</code>
+                </div>
+                
+                <div class="mt-3 p-3 bg-red-100 rounded border border-red-300">
+                    <h4 class="font-bold text-red-800 mb-1">ブロックされる危険な操作:</h4>
+                    <code class="text-red-700 text-sm block whitespace-pre-line">// これらは全てブロックされます：
+fetch('https://example.com');  // ネットワークアクセス
+document.body;                 // DOM操作
+window.location;              // ブラウザ操作
+XMLHttpRequest();             // HTTP通信
+WebSocket();                  // リアルタイム通信</code>
                 </div>
             </div>
         </div>
@@ -56,76 +63,46 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import JavaScriptEditor from '~/components/JavaScriptEditor.vue'
+import SecureJavaScriptEditor from '~/components/SecureJavaScriptEditor.vue'
 
-// State
-const code = ref(`// JavaScriptコードをここに入力してください
-console.log("Hello World!");
+// Safe default code that demonstrates functionality
+const code = ref(`// 安全なJavaScriptコードの例
+console.log("🔒 セキュア実行環境へようこそ！");
 
-// 例: 変数と計算
-let x = 5;
-let y = 10;
-console.log("x + y =", x + y);
+// 基本的な変数と計算
+let greeting = "Hello";
+let target = "World";
+console.log(greeting + " " + target + "!");
 
-// 例: 配列操作
-let numbers = [1, 2, 3, 4, 5];
-console.log("配列:", numbers);
-console.log("合計:", numbers.reduce((a, b) => a + b, 0));`)
+// 配列操作の例
+let fruits = ["りんご", "バナナ", "オレンジ"];
+console.log("果物リスト:", fruits);
 
-const results = ref<string[]>([])
-const error = ref<string>('')
+fruits.forEach((fruit, index) => {
+    console.log(\`\${index + 1}. \${fruit}\`);
+});
 
-// Function to execute JavaScript code
-const executeCode = () => {
-    // Clear previous results and errors
-    results.value = []
-    error.value = ''
-    
-    try {
-        // Create a custom console.log that captures output
-        const originalLog = console.log
-        const capturedLogs: string[] = []
-        
-        // Override console.log temporarily
-        console.log = (...args: any[]) => {
-            const formattedArgs = args.map(arg => {
-                if (typeof arg === 'object') {
-                    return JSON.stringify(arg, null, 2)
-                }
-                return String(arg)
-            }).join(' ')
-            capturedLogs.push(formattedArgs)
-        }
-        
-        // Execute the code
-        eval(code.value)
-        
-        // Restore original console.log
-        console.log = originalLog
-        
-        // Set results
-        results.value = capturedLogs
-        
-        // If no console.log was called, show a message
-        if (capturedLogs.length === 0) {
-            results.value = ['コードが実行されました（出力はありません）']
-        }
-        
-    } catch (err: any) {
-        // Restore original console.log in case of error
-        console.log = console.log
-        error.value = err.message || 'エラーが発生しました'
-    }
-}
+// オブジェクト操作の例
+let person = {
+    name: "太郎",
+    age: 25,
+    city: "東京"
+};
 
-// Function to clear results
-const clearResults = () => {
-    results.value = []
-    error.value = ''
-}
+console.log("人物情報:", person);
+console.log(\`\${person.name}さんは\${person.age}歳で、\${person.city}に住んでいます。\`);
+
+// 数学的計算
+let numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+let sum = numbers.reduce((acc, num) => acc + num, 0);
+let average = sum / numbers.length;
+
+console.log("数値:", numbers);
+console.log("合計:", sum);
+console.log("平均:", average);`)
 
 // Set page title
 useHead({
-    title: 'JavaScriptプレイグラウンド'
+    title: '安全なJavaScriptプレイグラウンド - セキュア実行環境'
 })
 </script>
