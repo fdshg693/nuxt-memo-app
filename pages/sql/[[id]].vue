@@ -11,6 +11,7 @@
                 :current-q-a="currentQA"
                 :index="index"
                 :questions-length="questions.length"
+                :already-answered="currentQuestionAnswered"
                 @prev="prevQuestion"
                 @next="nextQuestion"
             />
@@ -47,6 +48,8 @@ import { useSqlQuiz } from '~/composables/useSqlQuiz';
 import { useSqlDb } from '~/composables/useSqlDb';
 import { useSqlQuestionState } from '~/composables/useSqlQuestionState';
 import { useSqlExecution } from '~/composables/useSqlExecution';
+import { useAuth } from '~/composables/useAuth';
+import { useUserProgress } from '~/composables/useUserProgress';
 
 import SqlQuestionHeader from '~/components/sql/SqlQuestionHeader.vue';
 import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
@@ -57,6 +60,8 @@ import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
 const route = useRoute();
 const { questions, loadQuestions } = useSqlQuiz();
 const { loadDatabases, getDatabaseByName } = useSqlDb();
+const { isLoggedIn } = useAuth();
+const { recordCorrectAnswer, isQuestionAnsweredCorrectly } = useUserProgress();
 const { 
   index, 
   sql, 
@@ -81,6 +86,13 @@ const {
   createAnswerCopyTables,
   checkAnswer: checkAnswerComposable
 } = useSqlExecution();
+
+// ===== Computed Properties =====
+const currentQuestionAnswered = computed(() => {
+    if (!isLoggedIn.value) return false;
+    const currentQuestion = questions.value.find(q => q.id === index.value);
+    return currentQuestion ? isQuestionAnsweredCorrectly(currentQuestion.id) : false;
+});
 
 // ===== Utility Functions =====
 function setRouteParams() {
@@ -121,6 +133,19 @@ function checkAnswer() {
         isCorrect,
         () => executeAnswerSQL(currentQA, correctResult)
     );
+    
+    // 正解した場合、ログインしているユーザーの進捗を記録
+    if (isCorrect.value === true && isLoggedIn.value) {
+        const currentQuestion = questions.value.find(q => q.id === index.value);
+        if (currentQuestion) {
+            recordCorrectAnswer(
+                currentQuestion.id,
+                currentQuestion.genre,
+                currentQuestion.subgenre,
+                currentQuestion.level
+            );
+        }
+    }
 }
 
 // ===== AI Functions =====
