@@ -31,10 +31,12 @@ describe('SQL Integration Tests', () => {
     const firstQuestion = questions.value[0]
     expect(firstQuestion).toBeDefined()
     
-    // 問題に対応するデータベースを取得
-    const database = getDatabaseByName(firstQuestion.DbName)
+    // 問題に対応するデータベースを取得（複数データベースの場合は最初のものをチェック）
+    const dbNames = firstQuestion.DbName.split(',')
+    const firstDbName = dbNames[0].trim()
+    const database = getDatabaseByName(firstDbName)
     expect(database).toBeDefined()
-    expect(database?.name).toBe(firstQuestion.DbName)
+    expect(database?.name).toBe(firstDbName)
   })
 
   it('should have questions with valid database references', async () => {
@@ -77,10 +79,19 @@ describe('SQL Integration Tests', () => {
     questions.value.forEach((question) => {
       expect(question.id).toBeDefined()
       expect(question.question).toBeDefined()
-      expect(question.answer).toBeDefined()
       expect(question.DbName).toBeDefined()
-      expect(typeof question.answer).toBe('string')
-      expect(question.answer.length).toBeGreaterThan(0)
+      
+      // Analysis questions have analysisCode instead of answer
+      if (question.type === 'analysis') {
+        expect(question.analysisCode).toBeDefined()
+        expect(typeof question.analysisCode).toBe('string')
+        expect(question.analysisCode.length).toBeGreaterThan(0)
+      } else {
+        // Execution questions have answer
+        expect(question.answer).toBeDefined()
+        expect(typeof question.answer).toBe('string')
+        expect(question.answer.length).toBeGreaterThan(0)
+      }
     })
   })
 

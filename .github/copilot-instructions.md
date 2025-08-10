@@ -25,6 +25,20 @@ questions.value = loaded.sort((a, b) => {
 })
 ```
 
+#### Question Types
+The system supports two types of SQL questions:
+
+1. **Execution Questions** (`type: "execution"` or undefined):
+   - Traditional SQL questions where users write and execute queries
+   - Have `answer` field with correct SQL
+   - Use `SqlExecutionPanel` component
+
+2. **Analysis Questions** (`type: "analysis"`):
+   - Code analysis questions for advanced concepts
+   - Have `analysisCode` field with SQL to analyze
+   - Support specialized genres: `PERFORMANCE`, `TRANSACTION`, `DEADLOCK`
+   - Use `SqlAnalysisPanel` component with user answer input
+
 ### In-Browser SQL Execution
 AlaSQL plugin (`/plugins/alasql.ts`) initializes memory databases on app start:
 - Tables from `sqlDatabases.json` are auto-created
@@ -42,12 +56,17 @@ AlaSQL plugin (`/plugins/alasql.ts`) initializes memory databases on app start:
 ```vue
 <!-- Prefer props/emits over complex state management -->
 <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" />
+<SqlAnalysisPanel :analysisCode="code" @submit-answer="submitAnalysisAnswer" />
 ```
 
 ### AI Integration
 OpenAI API calls go through `/server/api/openai.post.ts` with built-in prompt injection protection:
 - Only SQL-related prompts are allowed
 - System prompt restricts responses to SQL education
+- **Specialized Analysis Prompts**: Different AI strategies based on question genre:
+  - `PERFORMANCE`: Focus on execution plans, indexing, scalability
+  - `TRANSACTION`: Cover isolation levels, concurrency control, ACID properties
+  - `DEADLOCK`: Examine resource ordering and prevention strategies
 - Configure `OPENAI_API_KEY` in runtime config
 
 ### Route Protection
@@ -61,9 +80,28 @@ if (!isLoggedIn.value && to.path.startsWith('/janken')) {
 ## File Organization
 
 ### Data Structure
-- `sqlQuestions.json`: Question bank with id, genre, subgenre, level, answer
+- `sqlQuestions.json`: Question bank with id, genre, subgenre, level, answer/analysisCode
 - `sqlDatabases.json`: Table schemas and seed data for AlaSQL
 - `sqlExplanation/*.json`: Educational content for each SQL concept
+
+**Analysis Question Structure:**
+```json
+{
+  "id": 20,
+  "level": 1,
+  "genre": "PERFORMANCE", 
+  "question": "以下のSQLクエリのパフォーマンスを分析し、改善点があれば提案してください",
+  "analysisCode": "SELECT * FROM users WHERE name LIKE '%田%' ORDER BY age DESC",
+  "type": "analysis",
+  "DbName": "users"
+}
+```
+
+### Key Components
+- `SqlExecutionPanel.vue`: For traditional SQL execution questions
+- `SqlAnalysisPanel.vue`: For code analysis questions with user answer input
+- `SqlQuestionContent.vue`: Question display and navigation
+- `SqlAiAssistant.vue`: AI response display
 
 ### Key Composables
 - `useSqlQuiz()`: Question management and loading
@@ -73,14 +111,23 @@ if (!isLoggedIn.value && to.path.startsWith('/janken')) {
 ## Development Workflow
 
 ### Adding New SQL Questions
+
+#### Execution Questions
 1. Add to `sqlQuestions.json` with proper genre/subgenre/level
-2. Ensure referenced `DbName` exists in `sqlDatabases.json`
-3. Questions auto-appear on index page grouped by taxonomy
+2. Include `answer` field with correct SQL
+3. Ensure referenced `DbName` exists in `sqlDatabases.json`
+
+#### Analysis Questions
+1. Add to `sqlQuestions.json` with `type: "analysis"`
+2. Include `analysisCode` field with SQL to analyze
+3. Use genre: `PERFORMANCE`, `TRANSACTION`, or `DEADLOCK` for specialized AI prompts
+4. Questions auto-appear on index page grouped by taxonomy
 
 ### Testing SQL Features
 - Use browser devtools to inspect AlaSQL state: `window.alasql.databases`
 - SQL errors display in red bordered sections
 - AI responses appear in purple bordered sections
+- Analysis questions allow user input before AI feedback
 
 ### Environment Setup
 ```bash
@@ -95,3 +142,5 @@ npm run dev  # Standard Nuxt development
 - File naming: `[[id]].vue` for catch-all dynamic routes
 - TypeScript is configured but types are basic - add interfaces as needed
 - No complex state management - composables handle all data flow
+- Analysis questions provide educational experience for theoretical concepts
+- User answers in analysis questions are saved and displayed alongside AI feedback

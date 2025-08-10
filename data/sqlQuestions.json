@@ -164,5 +164,68 @@
         "question": "商品ごとの在庫合計数を取得する",
         "answer": "SELECT product_name, SUM(stock) FROM products GROUP BY product_name",
         "DbName": "products"
+    },
+    {
+        "id": 20,
+        "level": 1,
+        "genre": "PERFORMANCE",
+        "question": "以下のSQLクエリのパフォーマンスを分析し、改善点があれば提案してください",
+        "analysisCode": "SELECT * FROM users WHERE name LIKE '%田%' ORDER BY age DESC",
+        "type": "analysis",
+        "DbName": "users"
+    },
+    {
+        "id": 21,
+        "level": 1,
+        "genre": "PERFORMANCE",
+        "question": "このクエリのパフォーマンス問題を特定し、インデックス戦略を提案してください",
+        "analysisCode": "SELECT u.name, COUNT(o.id) FROM users u LEFT JOIN orders o ON u.id = o.user_id WHERE u.age > 25 GROUP BY u.id, u.name ORDER BY COUNT(o.id) DESC",
+        "type": "analysis",
+        "DbName": "users,orders"
+    },
+    {
+        "id": 22,
+        "level": 1,
+        "genre": "TRANSACTION",
+        "question": "以下のトランザクションの問題点を指摘し、適切な分離レベルやロック戦略を提案してください",
+        "analysisCode": "BEGIN TRANSACTION;\nUPDATE products SET stock = stock - 1 WHERE id = 100;\nSELECT stock FROM products WHERE id = 100;\nINSERT INTO orders (user_id, product_id, quantity) VALUES (1, 100, 1);\nCOMMIT;",
+        "type": "analysis",
+        "DbName": "products,orders"
+    },
+    {
+        "id": 23,
+        "level": 1,
+        "genre": "DEADLOCK",
+        "question": "以下の2つのトランザクションがデッドロックを引き起こす可能性を分析し、回避策を提案してください",
+        "analysisCode": "-- Transaction A:\nBEGIN;\nUPDATE users SET age = age + 1 WHERE id = 1;\nUPDATE customers SET age = age + 1 WHERE id = 2;\nCOMMIT;\n\n-- Transaction B:\nBEGIN;\nUPDATE customers SET age = age - 1 WHERE id = 2;\nUPDATE users SET age = age - 1 WHERE id = 1;\nCOMMIT;",
+        "type": "analysis",
+        "DbName": "users,customers"
+    },
+    {
+        "id": 24,
+        "level": 2,
+        "genre": "PERFORMANCE",
+        "question": "N+1問題を含むクエリを分析し、効率的な解決策を提案してください",
+        "analysisCode": "-- アプリケーションコードで実行される可能性があるクエリ:\nSELECT * FROM orders WHERE user_id = 1;\n-- その後、各注文に対して：\nSELECT * FROM products WHERE id = ?;\nSELECT * FROM users WHERE id = ?;",
+        "type": "analysis",
+        "DbName": "orders,products,users"
+    },
+    {
+        "id": 25,
+        "level": 2,
+        "genre": "TRANSACTION",
+        "question": "このトランザクションの分離レベルとファントムリード問題について分析してください",
+        "analysisCode": "SET TRANSACTION ISOLATION LEVEL READ COMMITTED;\nBEGIN TRANSACTION;\nSELECT COUNT(*) FROM orders WHERE total_amount > 1000;\n-- 他のトランザクションが高額注文を追加\nSELECT COUNT(*) FROM orders WHERE total_amount > 1000;\nCOMMIT;",
+        "type": "analysis",
+        "DbName": "orders"
+    },
+    {
+        "id": 26,
+        "level": 2,
+        "genre": "DEADLOCK",
+        "question": "複数テーブルの更新順序によるデッドロック問題を分析し、最適な更新順序を提案してください",
+        "analysisCode": "-- Transaction 1:\nBEGIN;\nUPDATE products SET stock = stock - 5 WHERE id = 100;\nUPDATE orders SET status = 'processing' WHERE id = 1;\nUPDATE users SET purchase_count = purchase_count + 1 WHERE id = 1;\nCOMMIT;\n\n-- Transaction 2:\nBEGIN;\nUPDATE users SET last_activity = NOW() WHERE id = 1;\nUPDATE orders SET priority = 'high' WHERE id = 1;\nUPDATE products SET view_count = view_count + 1 WHERE id = 100;\nCOMMIT;",
+        "type": "analysis",
+        "DbName": "products,orders,users"
     }
 ]

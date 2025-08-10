@@ -8,7 +8,9 @@ interface Table {
 
 interface QuestionAnswer {
   question: string;
-  answer: string;
+  answer?: string;
+  analysisCode?: string;
+  type?: 'analysis' | 'execution';
   showRecordsSql: string;
   dbNames: string[];
   dbs: Table[];
@@ -18,7 +20,7 @@ interface QuestionAnswer {
 
 export const useSqlQuestionState = () => {
   // Question and routing state
-  const index = ref(1);
+  const index = ref(0); // Default to 0 so no question matches until route is parsed
   
   // SQL and AI state
   const sql = ref('');
@@ -38,6 +40,8 @@ export const useSqlQuestionState = () => {
   const currentQA = ref<QuestionAnswer>({
     question: '',
     answer: '',
+    analysisCode: '',
+    type: 'execution',
     showRecordsSql: '',
     dbNames: [],
     dbs: [],
@@ -61,6 +65,8 @@ export const useSqlQuestionState = () => {
     currentQA.value = {
       question: '問題が見つかりません',
       answer: '',
+      analysisCode: '',
+      type: 'execution',
       dbNames: [],
       dbs: [],
       genre: [],
