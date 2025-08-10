@@ -2,11 +2,13 @@ import { ref } from 'vue'
 import sqlQuestions from '@/data/sqlQuestions.json'
 
 export function useSqlQuiz() {
-    // 型を拡張してgenre, subgenre, levelを含める
+    // 型を拡張してgenre, subgenre, level, analysis typeを含める
     const questions = ref<Array<{
         id: number;
         question: string;
-        answer: string;
+        answer?: string;
+        analysisCode?: string;
+        type?: 'analysis' | 'execution';
         showRecordsSql?: string;
         DbName: string;
         genre?: string;

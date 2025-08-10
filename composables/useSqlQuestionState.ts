@@ -8,7 +8,9 @@ interface Table {
 
 interface QuestionAnswer {
   question: string;
-  answer: string;
+  answer?: string;
+  analysisCode?: string;
+  type?: 'analysis' | 'execution';
   showRecordsSql: string;
   dbNames: string[];
   dbs: Table[];
@@ -38,6 +40,8 @@ export const useSqlQuestionState = () => {
   const currentQA = ref<QuestionAnswer>({
     question: '',
     answer: '',
+    analysisCode: '',
+    type: 'execution',
     showRecordsSql: '',
     dbNames: [],
     dbs: [],
@@ -61,6 +65,8 @@ export const useSqlQuestionState = () => {
     currentQA.value = {
       question: '問題が見つかりません',
       answer: '',
+      analysisCode: '',
+      type: 'execution',
       dbNames: [],
       dbs: [],
       genre: [],
