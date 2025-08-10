@@ -5,7 +5,7 @@
             <div class="flex items-center gap-3">
                 <span class="text-sm text-gray-600">こんにちは、</span>
                 <span class="font-medium text-purple-700">{{ username }}さん</span>
-                <NuxtLink to="/profile" class="bg-purple-100 text-purple-700 px-2 py-1 rounded text-xs hover:bg-purple-200">
+                <NuxtLink to="/profile" class="bg-purple-600 text-white px-3 py-2 rounded text-sm hover:bg-purple-700 font-medium">
                     プロフィール
                 </NuxtLink>
                 <button @click="logout" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200">
@@ -29,6 +29,7 @@
     <NuxtLink to="sql" class="btn-gradient mb-8">SQL</NuxtLink>
     <NuxtLink to="sql/allTables" class="btn-gradient mb-8">SQLで使うテーブルの一覧</NuxtLink>
     <NuxtLink to="sql/explanation" class="btn-gradient mb-8">SQL文の説明</NuxtLink>
+    <NuxtLink v-if="isLoggedIn" to="/profile" class="btn-gradient mb-8 bg-gradient-to-r from-purple-600 to-indigo-600">マイプロフィール</NuxtLink>
     <div class="border-2 border-purple-400 rounded-lg p-4 mt-8 bg-white shadow-md">
         <h2 class="text-lg font-bold mb-4 text-purple-700">SQL問題一覧</h2>
         <div v-for="(genreGroup, genre) in groupedQuestions" :key="genre" class="mb-6">

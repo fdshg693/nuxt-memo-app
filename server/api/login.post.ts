@@ -8,12 +8,13 @@ export default defineEventHandler(async (event) => {
     if (email === 'user@example.com' && password === 'password123') {
         const fakeToken = 'abcdefg1234567'; // 実際は JWT を生成
         
-        // クッキーにトークンをセット（httpOnly, secure, sameSite などを設定可能）
+        // クッキーにトークンをセット（httpOnly: false で client-side からアクセス可能）
         setCookie(event, 'auth_token', fakeToken, {
-            httpOnly: true,
+            httpOnly: false, // Client-side access を有効にする
             secure: process.env.NODE_ENV === 'production',
             maxAge: 60 * 60 * 24 * 7, // 7日
-            path: '/'
+            path: '/',
+            sameSite: 'lax'
         });
         
         return { 
@@ -30,10 +31,11 @@ export default defineEventHandler(async (event) => {
         const fakeToken = `token_${Date.now()}`;
         
         setCookie(event, 'auth_token', fakeToken, {
-            httpOnly: true,
+            httpOnly: false, // Client-side access を有効にする
             secure: process.env.NODE_ENV === 'production',
             maxAge: 60 * 60 * 24 * 7, // 7日
-            path: '/'
+            path: '/',
+            sameSite: 'lax'
         });
         
         return { 
