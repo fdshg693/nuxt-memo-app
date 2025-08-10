@@ -34,6 +34,11 @@ export const useAuth = () => {
                 console.log('Authentication successful:', data);
                 userProfile.value = data.user;
                 isLoggedIn.value = true;
+                
+                // ユーザー進捗を再初期化（再ログイン時の進捗継承）
+                const { initializeProgress } = useUserProgress();
+                initializeProgress(data.user.email);
+                
                 return true;
             } else {
                 console.log('Authentication failed:', response.status);
