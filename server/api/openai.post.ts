@@ -55,10 +55,8 @@ SQL以外の質問（プログラミング一般、数学、雑談など）に�
             },
             body: {
                 model: 'gpt-5',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: prompt },
-                ],
+                instructions: systemPrompt,
+                input: prompt,
                 max_output_tokens: 2000,
                 temperature: 0.1,
             }
