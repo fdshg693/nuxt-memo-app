@@ -98,9 +98,10 @@ function isValidSqlPrompt(prompt: string): boolean {
 
     // プリセットプロンプトを許可
     const allowedPresets = [
-        '確認', 'ヒント', '改善', 'パフォーマンス向上', 'SQL説明',
+        '確認', 'ヒント', '改善', 'パフォーマンス向上', 'SQL説明', 'このSQLコードを詳しく分析してください',
         'このクエリが正しいか確認して', 'ヒントを教えてください', 'このSQLの改善点を教えて',
-        'このSQLのパフォーマンスを向上させる方法は', 'このSQLの意図を分かりやすい日本語で説明して'
+        'このSQLのパフォーマンスを向上させる方法は', 'このSQLの意図を分かりやすい日本語で説明して',
+        'パフォーマンス', 'トランザクション', 'デッドロック', '分析', '最適化', 'インデックス'
     ]
 
     if (allowedPresets.some(preset => prompt.includes(preset))) {
@@ -111,8 +112,10 @@ function isValidSqlPrompt(prompt: string): boolean {
     const sqlKeywords = [
         'SQL', 'SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER',
         'TABLE', 'DATABASE', 'QUERY', 'WHERE', 'JOIN', 'GROUP BY', 'ORDER BY',
+        'TRANSACTION', 'COMMIT', 'ROLLBACK', 'DEADLOCK', 'PERFORMANCE', 'INDEX',
         'クエリ', 'テーブル', 'データベース', '結合', '並び替え', '抽出', '挿入',
-        '更新', '削除', '作成', '変更'
+        '更新', '削除', '作成', '変更', 'パフォーマンス', 'トランザクション', 'デッドロック',
+        '分析', '最適化', 'インデックス', '実行計画', 'ロック', '分離レベル'
     ]
 
     const hasKeyword = sqlKeywords.some(keyword =>

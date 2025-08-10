@@ -21,8 +21,9 @@
                 :ai-error-display="aiErrorDisplay"
             />
 
-            <!-- SQL Execution Panel -->
+            <!-- SQL Execution Panel (for traditional questions) -->
             <SqlExecutionPanel
+                v-if="currentQA.type === 'execution'"
                 v-model:sql="sql"
                 :is-ai-loading="isAiLoading"
                 :show-ai-prompt-modal="showAiPromptModal"
@@ -30,10 +31,20 @@
                 :result="result"
                 :sql-error-display="sqlErrorDisplay"
                 :is-correct="isCorrect"
-                :current-answer="currentQA.answer"
+                :current-answer="currentQA.answer || ''"
                 @execute="executeUserSQL"
                 @ask-ai="askAI"
                 @check="checkAnswer"
+            />
+
+            <!-- SQL Analysis Panel (for performance/transaction/deadlock questions) -->
+            <SqlAnalysisPanel
+                v-if="currentQA.type === 'analysis'"
+                :analysis-code="currentQA.analysisCode || ''"
+                :is-ai-loading="isAiLoading"
+                :genre="currentQA.genre[0]"
+                @ask-ai="askAnalysisAI"
+                @submit-answer="submitAnalysisAnswer"
             />
         </div>
     </div>
@@ -51,6 +62,7 @@ import { useSqlExecution } from '~/composables/useSqlExecution';
 import SqlQuestionHeader from '~/components/sql/SqlQuestionHeader.vue';
 import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
 import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
+import SqlAnalysisPanel from '~/components/sql/SqlAnalysisPanel.vue';
 import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
 
 // ===== Composables =====
@@ -85,7 +97,12 @@ const {
 // ===== Utility Functions =====
 function setRouteParams() {
     const id = route.params.id;
-    index.value = id == '' ? 1 : Number(id);
+    if (!id || id === '' || (Array.isArray(id) && id.length === 0)) {
+        index.value = 1;
+    } else {
+        const numId = Array.isArray(id) ? Number(id[0]) : Number(id);
+        index.value = isNaN(numId) ? 1 : numId;
+    }
 }
 
 function setCurrentQA() {
@@ -95,7 +112,9 @@ function setCurrentQA() {
         if (questionSet) {
             currentQA.value = {
                 question: questionSet.question,
-                answer: questionSet.answer,
+                answer: questionSet.answer || '',
+                analysisCode: questionSet.analysisCode || '',
+                type: questionSet.type || 'execution',
                 dbNames: questionSet.DbName.split(','),
                 dbs: questionSet.DbName.split(',').map(getDatabaseByName).filter(Boolean),
                 genre: Array.isArray(questionSet.genre) ? questionSet.genre : (questionSet.genre ? [questionSet.genre] : []),
@@ -133,11 +152,44 @@ async function askAI(userPrompt: string) {
         return `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n${rows}`;
     }).join('\n');
     const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQA.value.question}\n正しいSQLクエリ: ${currentQA.value.answer}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
+    await callOpenAI(prompt, userPrompt);
+}
+
+function submitAnalysisAnswer(userAnswer: string) {
+    // Save the user's analysis answer
+    console.log('User analysis submitted:', userAnswer);
+    // You could save this to localStorage or show a confirmation message
+    // For now, we'll just show a simple alert to confirm the answer was saved
+    aiAnswer.value = `✅ あなたの分析が保存されました。\n\n【あなたの回答】\n${userAnswer}\n\n「SQL分析を開始」ボタンをクリックして、AIの分析と比較してみてください。`;
+}
+
+async function askAnalysisAI(userPrompt: string) {
+    isAiLoading.value = true;
+    aiErrorDisplay.value = null;
+    aiAnswer.value = '';
+    
+    const genre = currentQA.value.genre[0] || '';
+    let prompt = '';
+    
+    if (genre === 'PERFORMANCE') {
+        prompt = `\nあなたはSQLパフォーマンス専門家です。\n以下のSQLクエリのパフォーマンスを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. クエリの実行計画の予測\n2. インデックスの活用状況\n3. パフォーマンス問題の特定\n4. 改善案の提案\n5. スケーラビリティの考慮事項\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
+    } else if (genre === 'TRANSACTION') {
+        prompt = `\nあなたはSQLトランザクション専門家です。\n以下のトランザクションを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. トランザクションの分離レベル\n2. 並行性制御の問題\n3. ロック戦略\n4. ACID特性の確保\n5. 潜在的な問題と解決策\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
+    } else if (genre === 'DEADLOCK') {
+        prompt = `\nあなたはSQLデッドロック専門家です。\n以下のSQLコードのデッドロック可能性を詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. デッドロック発生の可能性\n2. リソースアクセスの順序\n3. ロック競合のシナリオ\n4. デッドロック回避策\n5. 最適な実装パターン\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
+    } else {
+        prompt = `\nあなたはSQL専門家です。\n以下のSQLコードを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
+    }
+    
+    await callOpenAI(prompt, userPrompt);
+}
+
+async function callOpenAI(prompt: string, userPrompt: string) {
     const { data: aiResponse, error } = await useFetch('/api/openai', {
         method: 'POST',
         body: { 
             prompt,
-            sqlQuery: sql.value,
+            sqlQuery: currentQA.value.type === 'analysis' ? currentQA.value.analysisCode : sql.value,
             question: currentQA.value.question,
             userPrompt
         },
