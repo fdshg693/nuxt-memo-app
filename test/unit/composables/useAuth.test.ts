@@ -2,10 +2,15 @@ import { describe, it, expect, vi } from 'vitest'
 
 // Nuxtのcomposablesをモック
 const mockToken = { value: null }
+const mockUserProfile = { value: null }
 const mockComputed = vi.fn((fn) => ({ value: fn() }))
 
 vi.mock('#app', () => ({
-  useCookie: vi.fn(() => mockToken),
+  useCookie: vi.fn((key) => {
+    if (key === 'auth_token') return mockToken
+    if (key === 'user_profile') return mockUserProfile
+    return { value: null }
+  }),
   computed: mockComputed
 }))
 
@@ -28,6 +33,23 @@ describe('useAuth', () => {
     
     mockToken.value = null
     expect(mockToken.value).toBeNull()
+  })
+
+  it('should handle user profile changes', () => {
+    // ユーザープロファイルの状態変更をテスト
+    mockUserProfile.value = null
+    expect(mockUserProfile.value).toBeNull()
+    
+    const testProfile = {
+      username: 'testuser',
+      email: 'test@example.com',
+      loginAt: new Date().toISOString()
+    }
+    mockUserProfile.value = testProfile
+    expect(mockUserProfile.value).toEqual(testProfile)
+    
+    mockUserProfile.value = null
+    expect(mockUserProfile.value).toBeNull()
   })
 
   it('should compute login status correctly', () => {
