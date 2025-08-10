@@ -22,14 +22,17 @@ export const useUserProgress = () => {
     // Keep local state for immediate UI updates
     const userProgress = ref<UserProgress | null>(null);
 
-    const initializeProgress = async (username: string) => {
-        // Try to load progress from server first
+    const initializeProgress = async (userIdentifier: string) => {
+        // Clear any existing progress data first
+        userProgress.value = null;
+        
+        // Try to load progress from server first (using authenticated session)
         try {
             await loadProgressFromServer();
         } catch (error) {
             console.warn('Failed to load progress from server, using local storage:', error);
             // Fallback to local storage for offline support
-            loadProgressFromLocal(username);
+            loadProgressFromLocal(userIdentifier);
         }
     };
 
@@ -44,11 +47,14 @@ export const useUserProgress = () => {
 
         if (response.ok) {
             const data = await response.json();
+            console.log('Loaded progress from server:', data);
             userProgress.value = data;
-            // Also save to local storage as backup
-            saveProgressToLocal(data);
+            // Also save to local storage as backup, but keyed by username from server
+            if (data.username) {
+                saveProgressToLocal(data);
+            }
         } else {
-            throw new Error('Failed to load progress from server');
+            throw new Error(`Failed to load progress from server: ${response.status}`);
         }
     };
 

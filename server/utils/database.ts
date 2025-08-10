@@ -1,26 +1,10 @@
 // server/utils/database.ts
 import Database from 'better-sqlite3';
 import { join } from 'path';
+import { DatabaseAdapter, UserData, UserProgressData, SessionData } from './database-interface';
+import bcrypt from 'bcrypt';
 
-export interface UserData {
-  id: number;
-  email: string;
-  username: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface UserProgressData {
-  id: number;
-  user_id: number;
-  question_id: number;
-  answered_at: string;
-  genre?: string;
-  subgenre?: string;
-  level?: number;
-}
-
-class UserDatabase {
+class SQLiteAdapter implements DatabaseAdapter {
   private db: Database.Database;
 
   constructor() {
@@ -37,10 +21,22 @@ class UserDatabase {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
         username TEXT NOT NULL,
+        password_hash TEXT,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
     `);
+
+    // Migration: Add password_hash column if it doesn't exist
+    try {
+      this.db.exec(`ALTER TABLE users ADD COLUMN password_hash TEXT`);
+      console.log('Added password_hash column to users table');
+    } catch (error: any) {
+      // Column already exists or other error - this is expected
+      if (!error.message.includes('duplicate column name')) {
+        console.warn('Migration warning:', error.message);
+      }
+    }
 
     // Create user_progress table
     this.db.exec(`
@@ -70,14 +66,14 @@ class UserDatabase {
   }
 
   // User operations
-  createUser(email: string, username: string): UserData {
+  createUser(email: string, username: string, passwordHash?: string): UserData {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO users (email, username, created_at, updated_at)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO users (email, username, password_hash, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?)
     `);
     
-    const result = stmt.run(email, username, now, now);
+    const result = stmt.run(email, username, passwordHash || null, now, now);
     
     return this.getUserById(Number(result.lastInsertRowid))!;
   }
@@ -99,6 +95,11 @@ class UserDatabase {
     if (data.username) {
       updates.push('username = ?');
       values.push(data.username);
+    }
+    
+    if (data.password_hash) {
+      updates.push('password_hash = ?');
+      values.push(data.password_hash);
     }
     
     updates.push('updated_at = ?');
@@ -164,5 +165,5 @@ class UserDatabase {
   }
 }
 
-// Export singleton instance
-export const userDatabase = new UserDatabase();
+// Export singleton instance with interface
+export const userDatabase: DatabaseAdapter = new SQLiteAdapter();

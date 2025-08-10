@@ -1,6 +1,6 @@
 // server/utils/sessionStore.ts
 import { randomBytes } from 'crypto';
-import { userDatabase } from './database';
+import { database } from './database-factory';
 
 export interface SessionData {
   userId: number;
@@ -19,26 +19,26 @@ class SessionStore {
     const sessionId = this.generateSessionId();
     
     // Get or create user in database
-    let user = userDatabase.getUserByEmail(email);
+    let user = database.getUserByEmail(email);
     if (!user) {
-      user = userDatabase.createUser(email, username);
+      user = database.createUser(email, username);
     } else if (user.username !== username) {
       // Update username if it has changed
-      userDatabase.updateUser(user.id, { username });
-      user = userDatabase.getUserById(user.id)!;
+      database.updateUser(user.id, { username });
+      user = database.getUserById(user.id)!;
     }
     
     // Store session in database
-    userDatabase.createSession(sessionId, user.id);
+    database.createSession(sessionId, user.id);
     
     return sessionId;
   }
   
   getSession(sessionId: string): SessionData | null {
-    const session = userDatabase.getSession(sessionId);
+    const session = database.getSession(sessionId);
     if (!session) return null;
     
-    const user = userDatabase.getUserById(session.user_id);
+    const user = database.getUserById(session.user_id);
     if (!user) return null;
     
     return {
@@ -51,7 +51,7 @@ class SessionStore {
   }
   
   destroySession(sessionId: string): boolean {
-    return userDatabase.deleteSession(sessionId);
+    return database.deleteSession(sessionId);
   }
   
   // Clean up expired sessions (optional - for production you might want to run this periodically)

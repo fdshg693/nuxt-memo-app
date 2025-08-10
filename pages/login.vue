@@ -17,6 +17,13 @@
             </button>
         </form>
         
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">
+                アカウントをお持ちでない方は
+                <NuxtLink to="/register" class="text-green-600 hover:underline">新規登録</NuxtLink>
+            </p>
+        </div>
+        
         <div class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600">
             <p><strong>テスト用アカウント:</strong></p>
             <p>メール: 1@gmail.com</p>

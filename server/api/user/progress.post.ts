@@ -1,7 +1,7 @@
 // server/api/user/progress.post.ts
 import { defineEventHandler, getCookie, readBody } from 'h3';
 import { sessionStore } from '~/server/utils/sessionStore';
-import { userDatabase } from '~/server/utils/database';
+import { database } from '~/server/utils/database-factory';
 
 interface SaveProgressRequest {
     questionId: number;
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
         }
         
         // Save progress to database
-        userDatabase.saveProgress(session.userId, questionId, genre, subgenre, level);
+        database.saveProgress(session.userId, questionId, genre, subgenre, level);
         
         return { success: true, message: '進捗が保存されました' };
     } catch (error) {

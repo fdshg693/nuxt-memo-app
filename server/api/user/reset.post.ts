@@ -1,7 +1,7 @@
 // server/api/user/reset.post.ts
 import { defineEventHandler, getCookie } from 'h3';
 import { sessionStore } from '~/server/utils/sessionStore';
-import { userDatabase } from '~/server/utils/database';
+import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
     const sessionId = getCookie(event, 'session');
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     
     try {
         // Clear all user progress data
-        const cleared = userDatabase.clearUserProgress(session.userId);
+        const cleared = database.clearUserProgress(session.userId);
         
         if (cleared) {
             return { 

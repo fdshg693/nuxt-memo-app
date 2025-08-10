@@ -1,7 +1,7 @@
 // server/api/user/progress.get.ts
 import { defineEventHandler, getCookie } from 'h3';
 import { sessionStore } from '~/server/utils/sessionStore';
-import { userDatabase } from '~/server/utils/database';
+import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
     const sessionId = getCookie(event, 'session');
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
     
     try {
-        const progress = userDatabase.getUserProgress(session.userId);
+        const progress = database.getUserProgress(session.userId);
         
         // Transform to match frontend format
         const correctAnswers = progress.map(p => ({
