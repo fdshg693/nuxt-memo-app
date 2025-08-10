@@ -21,6 +21,13 @@
                 :ai-error-display="aiErrorDisplay"
             />
 
+            <!-- DEBUG INFO -->
+            <div class="mb-4 p-2 bg-yellow-100 rounded">
+                <p>Debug: currentQA.type = "{{ currentQA.type }}"</p>
+                <p>Debug: Should show analysis = {{ currentQA.type === 'analysis' }}</p>
+                <p>Debug: Should show execution = {{ currentQA.type === 'execution' }}</p>
+            </div>
+
             <!-- SQL Execution Panel (for traditional questions) -->
             <SqlExecutionPanel
                 v-if="currentQA.type === 'execution'"
