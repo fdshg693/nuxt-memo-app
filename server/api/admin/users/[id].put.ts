@@ -1,12 +1,12 @@
 // server/api/admin/users/[id].put.ts
 import { database } from '~/server/utils/database-factory';
-import { getSession } from '~/server/utils/sessionStore';
+import { getDbSession } from '~/server/utils/sessionStore';
 
 export default defineEventHandler(async (event) => {
   try {
     // Check if user is authenticated and is admin
     const sessionId = getCookie(event, 'session') || '';
-    const session = await getSession(sessionId);
+    const session = await getDbSession(sessionId);
     
     if (!session) {
       throw createError({

@@ -1,6 +1,6 @@
 // server/api/me.get.ts
 import { defineEventHandler, getCookie } from 'h3';
-import { getSession } from '~/server/utils/sessionStore';
+import { getDbSession } from '~/server/utils/sessionStore';
 import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = await getSession(sessionId);
+    const session = await getDbSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
