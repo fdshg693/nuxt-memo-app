@@ -6,6 +6,22 @@
         
         <!-- Main Content -->
         <div id="app" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
+            <!-- AI Question Generator -->
+            <SqlQuestionGenerator 
+                v-if="showQuestionGenerator"
+                @question-generated="handleGeneratedQuestion"
+            />
+            
+            <!-- Toggle Button for Question Generator -->
+            <div class="mb-4 text-center">
+                <button
+                    @click="toggleQuestionGenerator"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                >
+                    {{ showQuestionGenerator ? 'AI問題生成を閉じる' : 'AI問題を生成' }}
+                </button>
+            </div>
+
             <!-- Question Content -->
             <SqlQuestionContent 
                 :current-q-a="currentQA"
@@ -67,6 +83,7 @@ import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
 import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
 import SqlAnalysisPanel from '~/components/sql/SqlAnalysisPanel.vue';
 import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
+import SqlQuestionGenerator from '~/components/sql/SqlQuestionGenerator.vue';
 
 // ===== Composables =====
 const route = useRoute();
@@ -98,6 +115,9 @@ const {
   createAnswerCopyTables,
   checkAnswer: checkAnswerComposable
 } = useSqlExecution();
+
+// ===== Question Generator State =====
+const showQuestionGenerator = ref(false);
 
 // ===== Computed Properties =====
 const currentQuestionAnswered = computed(() => {
@@ -238,6 +258,40 @@ async function callOpenAI(prompt: string, userPrompt: string) {
         }
     }
     isAiLoading.value = false;
+}
+
+// ===== Question Generator Functions =====
+function toggleQuestionGenerator() {
+    showQuestionGenerator.value = !showQuestionGenerator.value;
+}
+
+function handleGeneratedQuestion(generatedQuestion: any) {
+    // Add the generated question as a temporary question
+    currentQA.value = {
+        question: generatedQuestion.question,
+        answer: generatedQuestion.answer || '',
+        analysisCode: generatedQuestion.analysisCode || '',
+        type: generatedQuestion.type || 'execution',
+        dbNames: generatedQuestion.DbName ? generatedQuestion.DbName.split(',') : ['users'],
+        dbs: generatedQuestion.DbName ? generatedQuestion.DbName.split(',').map(getDatabaseByName).filter(Boolean) : [getDatabaseByName('users')].filter(Boolean),
+        genre: Array.isArray(generatedQuestion.genre) ? generatedQuestion.genre : [generatedQuestion.genre],
+        showRecordsSql: generatedQuestion.showRecordsSql || '',
+        subgenre: Array.isArray(generatedQuestion.subgenre) ? generatedQuestion.subgenre : (generatedQuestion.subgenre ? [generatedQuestion.subgenre] : []),
+        generated: true
+    };
+    
+    // Reset states
+    resetSqlAndAi();
+    isCorrect.value = null;
+    
+    // Hide the generator
+    showQuestionGenerator.value = false;
+    
+    // Set up database tables for the generated question
+    if (currentQA.value.dbs.length > 0) {
+        createUserCopyTables(currentQA.value.dbs);
+        createAnswerCopyTables(currentQA.value.dbs);
+    }
 }
 
 // ===== Navigation Functions =====
