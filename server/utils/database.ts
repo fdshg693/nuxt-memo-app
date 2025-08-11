@@ -8,10 +8,39 @@ class SQLiteAdapter implements DatabaseAdapter {
   private db: Database.Database;
 
   constructor() {
-    // Create database in the project root's data directory
-    const dbPath = join(process.cwd(), 'data', 'users.db');
-    this.db = new Database(dbPath);
-    this.initTables();
+    // Create database path based on environment
+    // In production/serverless, use /tmp which is writable
+    // In development, use the data directory for persistence
+    const isProduction = process.env.NODE_ENV === 'production';
+    const dbDir = isProduction ? '/tmp' : join(process.cwd(), 'data');
+    const dbPath = join(dbDir, 'users.db');
+    
+    console.log(`Initializing SQLite database at: ${dbPath}`);
+    
+    try {
+      this.db = new Database(dbPath);
+      this.initTables();
+      console.log('SQLite database initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize SQLite database:', error);
+      // In production, try to create the directory if it doesn't exist
+      if (isProduction) {
+        try {
+          const fs = require('fs');
+          if (!fs.existsSync(dbDir)) {
+            fs.mkdirSync(dbDir, { recursive: true });
+          }
+          this.db = new Database(dbPath);
+          this.initTables();
+          console.log('SQLite database initialized successfully after creating directory');
+        } catch (retryError) {
+          console.error('Failed to initialize SQLite database even after creating directory:', retryError);
+          throw retryError;
+        }
+      } else {
+        throw error;
+      }
+    }
   }
 
   private initTables() {
