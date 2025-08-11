@@ -165,7 +165,7 @@ async function executeUserSQL() {
     isCorrect.value = null;
 }
 
-function checkAnswer() {
+async function checkAnswer() {
     checkAnswerComposable(
         result,
         correctResult,
@@ -177,7 +177,7 @@ function checkAnswer() {
     if (isCorrect.value === true && isLoggedIn.value) {
         const currentQuestion = questions.value.find(q => q.id === index.value);
         if (currentQuestion) {
-            recordCorrectAnswer(
+            await recordCorrectAnswer(
                 currentQuestion.id,
                 currentQuestion.genre,
                 currentQuestion.subgenre,
@@ -203,8 +203,20 @@ async function askAI(userPrompt: string) {
 function submitAnalysisAnswer(userAnswer: string) {
     // Save the user's analysis answer
     console.log('User analysis submitted:', userAnswer);
-    // You could save this to localStorage or show a confirmation message
-    // For now, we'll just show a simple alert to confirm the answer was saved
+    
+    // Record progress for analysis questions
+    if (isLoggedIn.value) {
+        const currentQuestion = questions.value.find(q => q.id === index.value);
+        if (currentQuestion) {
+            recordCorrectAnswer(
+                currentQuestion.id,
+                currentQuestion.genre,
+                currentQuestion.subgenre,
+                currentQuestion.level
+            );
+        }
+    }
+    
     aiAnswer.value = `✅ あなたの分析が保存されました。\n\n【あなたの回答】\n${userAnswer}\n\n「SQL分析を開始」ボタンをクリックして、AIの分析と比較してみてください。`;
 }
 

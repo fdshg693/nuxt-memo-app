@@ -17,6 +17,13 @@
             </button>
         </form>
         
+        <div class="mt-6 text-center">
+            <p class="text-gray-600">
+                アカウントをお持ちでない方は
+                <NuxtLink to="/register" class="text-green-600 hover:underline">新規登録</NuxtLink>
+            </p>
+        </div>
+        
         <div class="mt-4 p-3 bg-gray-50 rounded text-sm text-gray-600">
             <p><strong>テスト用アカウント:</strong></p>
             <p>メール: 1@gmail.com</p>
@@ -54,7 +61,7 @@ const onSubmit = async () => {
         if (result.success) {
             console.log('Login successful, initializing progress...');
             // ユーザー進捗を初期化（メールアドレスをユーザーIDとして使用）
-            initializeProgress(form.email);
+            await initializeProgress(form.email);
             
             console.log('Redirecting to home page...');
             // ホームページに遷移
