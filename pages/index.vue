@@ -5,6 +5,10 @@
             <div class="flex items-center gap-3">
                 <span class="text-sm text-gray-600">こんにちは、</span>
                 <span class="font-medium text-purple-700">{{ username }}さん</span>
+                <NuxtLink v-if="userProfile?.is_admin" to="/admin" 
+                          class="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700 font-medium">
+                    管理者画面
+                </NuxtLink>
                 <NuxtLink to="/profile" class="bg-purple-600 text-white px-3 py-2 rounded text-sm hover:bg-purple-700 font-medium">
                     プロフィール
                 </NuxtLink>
@@ -59,7 +63,7 @@ import { useUserProgress } from '~/composables/useUserProgress';
 
 const router = useRouter();
 const { questions, loadQuestions } = useSqlQuiz();
-const { isLoggedIn, username, logout: authLogout } = useAuth();
+const { isLoggedIn, username, userProfile, logout: authLogout } = useAuth();
 const { isQuestionAnsweredCorrectly, clearProgress } = useUserProgress();
 
 const groupedQuestions = computed(() => {

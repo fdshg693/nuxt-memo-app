@@ -3,6 +3,7 @@ export interface UserProfile {
     username: string;
     email: string;
     loginAt: string;
+    is_admin: boolean;
 }
 
 // Global state that persists across component instances
@@ -68,6 +69,15 @@ export const useAuth = () => {
             if (response.ok && data.success) {
                 // ログイン成功後、ユーザー情報を取得
                 await checkAuth();
+                
+                // Initialize user progress after successful login
+                try {
+                    const { loadProgressFromServer } = useUserProgress();
+                    await loadProgressFromServer();
+                } catch (error) {
+                    console.warn('Failed to initialize progress after login:', error);
+                }
+                
                 return { success: true };
             } else {
                 return { success: false, message: data.message };
@@ -90,8 +100,45 @@ export const useAuth = () => {
         } catch (error) {
             console.warn('ログアウト API エラー:', error);
         } finally {
+            // Clear frontend state
             userProfile.value = null;
             isLoggedIn.value = false;
+            
+            // Clear any cached user progress data to ensure fresh load on next login
+            if (process.client) {
+                const localData = useCookie<any>('user_progress');
+                localData.value = null;
+            }
+        }
+    };
+
+    // 新規登録処理
+    const register = async (email: string, password: string, username?: string) => {
+        try {
+            const response = await fetch('/api/register', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ email, password, username })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                // 登録成功後、ユーザー情報を取得
+                await checkAuth();
+                return { success: true, message: data.message };
+            } else {
+                return { success: false, message: data.message };
+            }
+        } catch (error: any) {
+            return { 
+                success: false, 
+                message: '新規登録に失敗しました' 
+            };
         }
     };
 
@@ -101,6 +148,7 @@ export const useAuth = () => {
         username,
         checkAuth,
         login,
+        register,
         logout 
     };
 };

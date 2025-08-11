@@ -45,6 +45,11 @@
                             <NuxtLink to="/quiz" class="block bg-purple-600 text-white text-center px-4 py-2 rounded hover:bg-purple-700">
                                 クイズに挑戦
                             </NuxtLink>
+                            <button @click="resetProgress" 
+                                    :disabled="isResetting" 
+                                    class="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50">
+                                {{ isResetting ? 'リセット中...' : '進捗をリセット' }}
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -94,20 +99,30 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useUserProgress } from '~/composables/useUserProgress';
 
 const router = useRouter();
 const { userProfile, logout: authLogout, isLoggedIn, checkAuth } = useAuth();
-const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, clearProgress } = useUserProgress();
+const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, clearProgress, loadProgressFromServer } = useUserProgress();
+
+const isResetting = ref(false);
 
 // Check authentication status and redirect if not logged in
 onMounted(async () => {
     const isAuthenticated = await checkAuth();
     if (!isAuthenticated) {
         await router.push('/login');
+        return;
+    }
+    
+    // Load user progress from server after authentication
+    try {
+        await loadProgressFromServer();
+    } catch (error) {
+        console.warn('Failed to load progress from server:', error);
     }
 });
 
@@ -130,9 +145,29 @@ const formatDate = (dateString: string) => {
     });
 };
 
+const resetProgress = async () => {
+    if (!confirm('本当に学習進捗をリセットしますか？この操作は取り消せません。')) {
+        return;
+    }
+    
+    isResetting.value = true;
+    try {
+        const success = await clearProgress();
+        if (success) {
+            alert('学習進捗がリセットされました。');
+        } else {
+            alert('進捗のリセットに失敗しました。もう一度お試しください。');
+        }
+    } catch (error) {
+        console.error('Reset error:', error);
+        alert('進捗のリセット中にエラーが発生しました。');
+    } finally {
+        isResetting.value = false;
+    }
+};
+
 const logout = async () => {
     await authLogout();
-    clearProgress();
     await router.push('/login');
 };
 </script>

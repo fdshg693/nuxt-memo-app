@@ -1,6 +1,7 @@
 // server/api/me.get.ts
 import { defineEventHandler, getCookie } from 'h3';
-import { sessionStore } from '~/server/utils/sessionStore';
+import { getSession } from '~/server/utils/sessionStore';
+import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
     const sessionId = getCookie(event, 'session');
@@ -10,18 +11,27 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = sessionStore.getSession(sessionId);
+    const session = await getSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
         return { error: 'セッションが無効です' };
     }
     
+    // Get user details from database to include admin status
+    const user = database.getUserById(session.user_id);
+    
+    if (!user) {
+        event.res.statusCode = 401;
+        return { error: 'ユーザーが見つかりません' };
+    }
+    
     return {
         user: {
-            username: session.username,
-            email: session.email,
-            loginAt: session.createdAt.toISOString()
+            username: user.username,
+            email: user.email,
+            is_admin: user.is_admin,
+            loginAt: user.updated_at
         }
     };
 });
