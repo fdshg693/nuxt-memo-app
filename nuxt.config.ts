@@ -11,9 +11,12 @@ export default defineNuxtConfig({
   runtimeConfig: {
     // サーバサイド専用のキー
     openaiApiKey: process.env.OPENAI_API_KEY,
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     // クライアントにも公開するキー（NUXT_PUBLIC_ が自動的に消えます）
     public: {
-      apiKey: process.env.NUXT_PUBLIC_API_KEY
+      apiKey: process.env.NUXT_PUBLIC_API_KEY,
+      stripePublishableKey: process.env.NUXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
     }
   },
   plugins: [
