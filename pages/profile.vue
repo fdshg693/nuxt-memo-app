@@ -99,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useUserProgress } from '~/composables/useUserProgress';
