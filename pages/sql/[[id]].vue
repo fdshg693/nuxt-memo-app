@@ -166,7 +166,7 @@ async function executeUserSQL() {
 }
 
 async function checkAnswer() {
-    checkAnswerComposable(
+    await checkAnswerComposable(
         result,
         correctResult,
         isCorrect,
@@ -308,17 +308,25 @@ function handleGeneratedQuestion(generatedQuestion: any) {
 
 // ===== Navigation Functions =====
 function prevQuestion() {
-    if (index.value > 0) {
-        index.value--;
-        setCurrentQA();
-        isCorrect.value = null;
+    // Find the previous available question ID
+    const currentId = index.value;
+    const availableIds = questions.value.map(q => q.id).sort((a, b) => a - b);
+    const currentIdx = availableIds.indexOf(currentId);
+    
+    if (currentIdx > 0) {
+        const prevId = availableIds[currentIdx - 1];
+        navigateTo(`/sql/${prevId}`);
     }
 }
 function nextQuestion() {
-    if (index.value < questions.value.length - 1) {
-        index.value++;
-        setCurrentQA();
-        isCorrect.value = null;
+    // Find the next available question ID
+    const currentId = index.value;
+    const availableIds = questions.value.map(q => q.id).sort((a, b) => a - b);
+    const currentIdx = availableIds.indexOf(currentId);
+    
+    if (currentIdx !== -1 && currentIdx < availableIds.length - 1) {
+        const nextId = availableIds[currentIdx + 1];
+        navigateTo(`/sql/${nextId}`);
     }
 }
 

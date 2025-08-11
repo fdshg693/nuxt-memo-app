@@ -73,13 +73,13 @@ export const useSqlExecution = () => {
     await createCopyTables('answer', dbs);
   };
 
-  const checkAnswer = (
+  const checkAnswer = async (
     result: any,
     correctResult: any,
     isCorrect: any,
     executeAnswerSQLFn: () => Promise<void>
   ) => {
-    executeAnswerSQLFn();
+    await executeAnswerSQLFn();
     isCorrect.value = isEqual(toRaw(result.value), toRaw(correctResult.value));
   };
 
