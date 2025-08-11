@@ -3,6 +3,7 @@ export interface UserProfile {
     username: string;
     email: string;
     loginAt: string;
+    is_admin: boolean;
 }
 
 // Global state that persists across component instances
@@ -68,6 +69,15 @@ export const useAuth = () => {
             if (response.ok && data.success) {
                 // ログイン成功後、ユーザー情報を取得
                 await checkAuth();
+                
+                // Initialize user progress after successful login
+                try {
+                    const { loadProgressFromServer } = useUserProgress();
+                    await loadProgressFromServer();
+                } catch (error) {
+                    console.warn('Failed to initialize progress after login:', error);
+                }
+                
                 return { success: true };
             } else {
                 return { success: false, message: data.message };

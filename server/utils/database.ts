@@ -51,6 +51,7 @@ class SQLiteAdapter implements DatabaseAdapter {
         email TEXT UNIQUE NOT NULL,
         username TEXT NOT NULL,
         password_hash TEXT,
+        is_admin BOOLEAN DEFAULT 0,
         created_at TEXT NOT NULL,
         updated_at TEXT NOT NULL
       )
@@ -60,6 +61,17 @@ class SQLiteAdapter implements DatabaseAdapter {
     try {
       this.db.exec(`ALTER TABLE users ADD COLUMN password_hash TEXT`);
       console.log('Added password_hash column to users table');
+    } catch (error: any) {
+      // Column already exists or other error - this is expected
+      if (!error.message.includes('duplicate column name')) {
+        console.warn('Migration warning:', error.message);
+      }
+    }
+
+    // Migration: Add is_admin column if it doesn't exist
+    try {
+      this.db.exec(`ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT 0`);
+      console.log('Added is_admin column to users table');
     } catch (error: any) {
       // Column already exists or other error - this is expected
       if (!error.message.includes('duplicate column name')) {
@@ -95,40 +107,67 @@ class SQLiteAdapter implements DatabaseAdapter {
   }
 
   // User operations
-  createUser(email: string, username: string, passwordHash?: string): UserData {
+  createUser(email: string, username: string, passwordHash?: string, isAdmin: boolean = false): UserData {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
-      INSERT INTO users (email, username, password_hash, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO users (email, username, password_hash, is_admin, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)
     `);
     
-    const result = stmt.run(email, username, passwordHash || null, now, now);
+    const result = stmt.run(email, username, passwordHash || null, isAdmin ? 1 : 0, now, now);
     
     return this.getUserById(Number(result.lastInsertRowid))!;
   }
 
   getUserByEmail(email: string): UserData | null {
     const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
-    return stmt.get(email) as UserData | null;
+    const result = stmt.get(email) as any;
+    if (result) {
+      result.is_admin = Boolean(result.is_admin);
+    }
+    return result as UserData | null;
   }
 
   getUserById(id: number): UserData | null {
     const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
-    return stmt.get(id) as UserData | null;
+    const result = stmt.get(id) as any;
+    if (result) {
+      result.is_admin = Boolean(result.is_admin);
+    }
+    return result as UserData | null;
+  }
+
+  getAllUsers(): UserData[] {
+    const stmt = this.db.prepare('SELECT * FROM users ORDER BY created_at DESC');
+    const results = stmt.all() as any[];
+    return results.map(result => {
+      result.is_admin = Boolean(result.is_admin);
+      return result as UserData;
+    });
   }
 
   updateUser(id: number, data: Partial<UserData>): boolean {
     const updates = [];
     const values = [];
     
-    if (data.username) {
+    if (data.username !== undefined) {
       updates.push('username = ?');
       values.push(data.username);
     }
     
-    if (data.password_hash) {
+    if (data.email !== undefined) {
+      updates.push('email = ?');
+      values.push(data.email);
+    }
+    
+    if (data.password_hash !== undefined) {
       updates.push('password_hash = ?');
       values.push(data.password_hash);
+    }
+    
+    if (data.is_admin !== undefined) {
+      updates.push('is_admin = ?');
+      values.push(data.is_admin ? 1 : 0);
     }
     
     updates.push('updated_at = ?');
@@ -137,6 +176,17 @@ class SQLiteAdapter implements DatabaseAdapter {
 
     const stmt = this.db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
     return stmt.run(...values).changes > 0;
+  }
+
+  deleteUser(id: number): boolean {
+    // First delete user's progress and sessions
+    this.clearUserProgress(id);
+    const deleteSessionsStmt = this.db.prepare('DELETE FROM sessions WHERE user_id = ?');
+    deleteSessionsStmt.run(id);
+    
+    // Then delete the user
+    const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
+    return stmt.run(id).changes > 0;
   }
 
   // Progress operations

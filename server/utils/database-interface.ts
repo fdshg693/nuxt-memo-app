@@ -4,6 +4,7 @@ export interface UserData {
   email: string;
   username: string;
   password_hash?: string;
+  is_admin: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -20,10 +21,12 @@ export interface UserProgressData {
 
 export interface DatabaseAdapter {
   // User operations
-  createUser(email: string, username: string, passwordHash?: string): UserData;
+  createUser(email: string, username: string, passwordHash?: string, isAdmin?: boolean): UserData;
   getUserByEmail(email: string): UserData | null;
   getUserById(id: number): UserData | null;
+  getAllUsers(): UserData[];
   updateUser(id: number, data: Partial<UserData>): boolean;
+  deleteUser(id: number): boolean;
   
   // Progress operations
   saveProgress(userId: number, questionId: number, genre?: string, subgenre?: string, level?: number): void;
