@@ -12,6 +12,9 @@
                 <NuxtLink to="/profile" class="bg-purple-600 text-white px-3 py-2 rounded text-sm hover:bg-purple-700 font-medium">
                     プロフィール
                 </NuxtLink>
+                <NuxtLink to="/subscription" class="bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 font-medium">
+                    サブスクリプション
+                </NuxtLink>
                 <button @click="logout" class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs hover:bg-red-200">
                     ログアウト
                 </button>
@@ -32,6 +35,7 @@
     <NuxtLink to="quiz" class="btn-gradient">クイズ</NuxtLink>
     <NuxtLink to="sql" class="btn-gradient mb-8">SQL</NuxtLink>
     <NuxtLink to="playground" class="btn-gradient mb-8">JavaScriptプレイグラウンド</NuxtLink>
+    <NuxtLink to="subscription" class="btn-gradient mb-8 bg-gradient-to-r from-green-500 to-green-600">サブスクリプション</NuxtLink>
     <NuxtLink to="sql/allTables" class="btn-gradient mb-8">SQLで使うテーブルの一覧</NuxtLink>
     <NuxtLink to="sql/explanation" class="btn-gradient mb-8">SQL文の説明</NuxtLink>
     <NuxtLink v-if="isLoggedIn" to="/profile" class="btn-gradient mb-8 bg-gradient-to-r from-purple-600 to-indigo-600">マイプロフィール</NuxtLink>

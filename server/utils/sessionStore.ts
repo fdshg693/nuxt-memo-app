@@ -1,5 +1,6 @@
 // server/utils/sessionStore.ts
 import { randomBytes } from 'crypto';
+import { getCookie } from 'h3';
 import { database } from './database-factory';
 
 export interface SessionData {
@@ -68,3 +69,21 @@ export const sessionStore = new SessionStore();
 export const getSession = (sessionId: string) => database.getSession(sessionId);
 export const createSession = (email: string, username: string) => sessionStore.createSession(email, username);
 export const destroySession = (sessionId: string) => sessionStore.destroySession(sessionId);
+
+// Helper function to get user from session event
+export const getSessionUser = async (event: any) => {
+  const sessionId = getCookie(event, 'session');
+  
+  if (!sessionId) {
+    return null;
+  }
+  
+  const session = await getSession(sessionId);
+  
+  if (!session) {
+    return null;
+  }
+  
+  // Get user details from database
+  return database.getUserById(session.user_id);
+};

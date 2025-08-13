@@ -79,6 +79,34 @@ class SQLiteAdapter implements DatabaseAdapter {
       }
     }
 
+    // Migration: Add Stripe-related columns if they don't exist
+    try {
+      this.db.exec(`ALTER TABLE users ADD COLUMN stripe_customer_id TEXT`);
+      console.log('Added stripe_customer_id column to users table');
+    } catch (error: any) {
+      if (!error.message.includes('duplicate column name')) {
+        console.warn('Migration warning:', error.message);
+      }
+    }
+
+    try {
+      this.db.exec(`ALTER TABLE users ADD COLUMN subscription_status TEXT`);
+      console.log('Added subscription_status column to users table');
+    } catch (error: any) {
+      if (!error.message.includes('duplicate column name')) {
+        console.warn('Migration warning:', error.message);
+      }
+    }
+
+    try {
+      this.db.exec(`ALTER TABLE users ADD COLUMN subscription_id TEXT`);
+      console.log('Added subscription_id column to users table');
+    } catch (error: any) {
+      if (!error.message.includes('duplicate column name')) {
+        console.warn('Migration warning:', error.message);
+      }
+    }
+
     // Create user_progress table
     this.db.exec(`
       CREATE TABLE IF NOT EXISTS user_progress (
@@ -168,6 +196,21 @@ class SQLiteAdapter implements DatabaseAdapter {
     if (data.is_admin !== undefined) {
       updates.push('is_admin = ?');
       values.push(data.is_admin ? 1 : 0);
+    }
+
+    if (data.stripe_customer_id !== undefined) {
+      updates.push('stripe_customer_id = ?');
+      values.push(data.stripe_customer_id);
+    }
+
+    if (data.subscription_status !== undefined) {
+      updates.push('subscription_status = ?');
+      values.push(data.subscription_status);
+    }
+
+    if (data.subscription_id !== undefined) {
+      updates.push('subscription_id = ?');
+      values.push(data.subscription_id);
     }
     
     updates.push('updated_at = ?');
