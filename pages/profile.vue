@@ -45,6 +45,10 @@
                             <NuxtLink to="/quiz" class="block bg-purple-600 text-white text-center px-4 py-2 rounded hover:bg-purple-700">
                                 クイズに挑戦
                             </NuxtLink>
+                            <button @click="toggleChart" 
+                                    class="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                                {{ showChart ? 'レポートを閉じる' : 'レポート' }}
+                            </button>
                             <button @click="resetProgress" 
                                     :disabled="isResetting" 
                                     class="w-full bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700 disabled:opacity-50">
@@ -54,6 +58,9 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Progress Chart -->
+            <ProgressChart :progress="progress" :show-chart="showChart" />
 
             <!-- Progress Details -->
             <div v-if="progress" class="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
@@ -99,16 +106,18 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '~/composables/useAuth';
 import { useUserProgress } from '~/composables/useUserProgress';
+import ProgressChart from '~/components/ProgressChart.vue';
 
 const router = useRouter();
 const { userProfile, logout: authLogout, isLoggedIn, checkAuth } = useAuth();
 const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, clearProgress, loadProgressFromServer } = useUserProgress();
 
 const isResetting = ref(false);
+const showChart = ref(false);
 
 // Check authentication status and redirect if not logged in
 onMounted(async () => {
@@ -169,6 +178,10 @@ const resetProgress = async () => {
 const logout = async () => {
     await authLogout();
     await router.push('/login');
+};
+
+const toggleChart = () => {
+    showChart.value = !showChart.value;
 };
 </script>
 

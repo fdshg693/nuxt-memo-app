@@ -65,6 +65,6 @@ class SessionStore {
 export const sessionStore = new SessionStore();
 
 // Convenient function exports for easy import
-export const getSession = (sessionId: string) => database.getSession(sessionId);
+export const getDbSession = (sessionId: string) => database.getSession(sessionId);
 export const createSession = (email: string, username: string) => sessionStore.createSession(email, username);
 export const destroySession = (sessionId: string) => sessionStore.destroySession(sessionId);
