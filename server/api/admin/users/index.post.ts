@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const currentUser = database.getUserById(session.user_id);
+    const currentUser = await database.getUserById(session.user_id);
     if (!currentUser || !currentUser.is_admin) {
       throw createError({
         statusCode: 403,
@@ -36,7 +36,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Check if user already exists
-    const existingUser = database.getUserByEmail(email);
+    const existingUser = await database.getUserByEmail(email);
     if (existingUser) {
       throw createError({
         statusCode: 400,
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Create user
-    const newUser = database.createUser(email, username, passwordHash, is_admin || false);
+    const newUser = await database.createUser(email, username, passwordHash, is_admin || false);
 
     // Return user without sensitive information
     return {
