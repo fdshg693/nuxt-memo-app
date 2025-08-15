@@ -1,0 +1,308 @@
+// server/utils/turso-adapter.ts
+import { createClient, type Client } from '@libsql/client';
+import { DatabaseAdapter, UserData, UserProgressData } from './database-interface';
+
+export class TursoAdapter implements DatabaseAdapter {
+  private client: Client;
+  private initPromise: Promise<void>;
+
+  constructor() {
+    const url = process.env.TURSO_DATABASE_URL;
+    const authToken = process.env.TURSO_AUTH_TOKEN;
+
+    if (!url || !authToken) {
+      throw new Error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables are required');
+    }
+
+    console.log(`Initializing Turso database connection to: ${url}`);
+    
+    this.client = createClient({
+      url,
+      authToken,
+    });
+
+    this.initPromise = this.initTables();
+    console.log('Turso database initialized successfully');
+  }
+
+  private async ensureInitialized(): Promise<void> {
+    await this.initPromise;
+  }
+
+  private async initTables() {
+    // Create users table
+    await this.client.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        username TEXT NOT NULL,
+        password_hash TEXT,
+        is_admin BOOLEAN DEFAULT 0,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        stripe_customer_id TEXT,
+        subscription_status TEXT,
+        subscription_id TEXT
+      )
+    `);
+
+    // Create user_progress table
+    await this.client.execute(`
+      CREATE TABLE IF NOT EXISTS user_progress (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        question_id INTEGER NOT NULL,
+        answered_at TEXT NOT NULL,
+        genre TEXT,
+        subgenre TEXT,
+        level INTEGER,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE(user_id, question_id)
+      )
+    `);
+
+    // Create sessions table for persistent session storage
+    await this.client.execute(`
+      CREATE TABLE IF NOT EXISTS sessions (
+        session_id TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        last_activity TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `);
+  }
+
+  // User operations
+  async createUser(email: string, username: string, passwordHash?: string, isAdmin: boolean = false): Promise<UserData> {
+    await this.ensureInitialized();
+    const now = new Date().toISOString();
+    
+    const result = await this.client.execute({
+      sql: `INSERT INTO users (email, username, password_hash, is_admin, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [email, username, passwordHash || null, isAdmin ? 1 : 0, now, now]
+    });
+    
+    return this.getUserById(Number(result.lastInsertRowid))!;
+  }
+
+  async getUserByEmail(email: string): Promise<UserData | null> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'SELECT * FROM users WHERE email = ?',
+      args: [email]
+    });
+    
+    if (result.rows.length === 0) return null;
+    
+    const row = result.rows[0];
+    return {
+      id: Number(row.id),
+      email: String(row.email),
+      username: String(row.username),
+      password_hash: row.password_hash ? String(row.password_hash) : undefined,
+      is_admin: Boolean(row.is_admin),
+      created_at: String(row.created_at),
+      updated_at: String(row.updated_at),
+      stripe_customer_id: row.stripe_customer_id ? String(row.stripe_customer_id) : undefined,
+      subscription_status: row.subscription_status ? String(row.subscription_status) : undefined,
+      subscription_id: row.subscription_id ? String(row.subscription_id) : undefined,
+    };
+  }
+
+  async getUserById(id: number): Promise<UserData | null> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'SELECT * FROM users WHERE id = ?',
+      args: [id]
+    });
+    
+    if (result.rows.length === 0) return null;
+    
+    const row = result.rows[0];
+    return {
+      id: Number(row.id),
+      email: String(row.email),
+      username: String(row.username),
+      password_hash: row.password_hash ? String(row.password_hash) : undefined,
+      is_admin: Boolean(row.is_admin),
+      created_at: String(row.created_at),
+      updated_at: String(row.updated_at),
+      stripe_customer_id: row.stripe_customer_id ? String(row.stripe_customer_id) : undefined,
+      subscription_status: row.subscription_status ? String(row.subscription_status) : undefined,
+      subscription_id: row.subscription_id ? String(row.subscription_id) : undefined,
+    };
+  }
+
+  async getAllUsers(): Promise<UserData[]> {
+    await this.ensureInitialized();
+    const result = await this.client.execute('SELECT * FROM users ORDER BY created_at DESC');
+    
+    return result.rows.map(row => ({
+      id: Number(row.id),
+      email: String(row.email),
+      username: String(row.username),
+      password_hash: row.password_hash ? String(row.password_hash) : undefined,
+      is_admin: Boolean(row.is_admin),
+      created_at: String(row.created_at),
+      updated_at: String(row.updated_at),
+      stripe_customer_id: row.stripe_customer_id ? String(row.stripe_customer_id) : undefined,
+      subscription_status: row.subscription_status ? String(row.subscription_status) : undefined,
+      subscription_id: row.subscription_id ? String(row.subscription_id) : undefined,
+    }));
+  }
+
+  async updateUser(id: number, data: Partial<UserData>): Promise<boolean> {
+    await this.ensureInitialized();
+    const updates = [];
+    const values = [];
+    
+    if (data.username !== undefined) {
+      updates.push('username = ?');
+      values.push(data.username);
+    }
+    
+    if (data.email !== undefined) {
+      updates.push('email = ?');
+      values.push(data.email);
+    }
+    
+    if (data.password_hash !== undefined) {
+      updates.push('password_hash = ?');
+      values.push(data.password_hash);
+    }
+    
+    if (data.is_admin !== undefined) {
+      updates.push('is_admin = ?');
+      values.push(data.is_admin ? 1 : 0);
+    }
+
+    if (data.stripe_customer_id !== undefined) {
+      updates.push('stripe_customer_id = ?');
+      values.push(data.stripe_customer_id);
+    }
+
+    if (data.subscription_status !== undefined) {
+      updates.push('subscription_status = ?');
+      values.push(data.subscription_status);
+    }
+
+    if (data.subscription_id !== undefined) {
+      updates.push('subscription_id = ?');
+      values.push(data.subscription_id);
+    }
+    
+    updates.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+
+    const result = await this.client.execute({
+      sql: `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
+      args: values
+    });
+    
+    return result.rowsAffected > 0;
+  }
+
+  async deleteUser(id: number): Promise<boolean> {
+    await this.ensureInitialized();
+    // First delete user's progress and sessions
+    await this.clearUserProgress(id);
+    await this.client.execute({
+      sql: 'DELETE FROM sessions WHERE user_id = ?',
+      args: [id]
+    });
+    
+    // Then delete the user
+    const result = await this.client.execute({
+      sql: 'DELETE FROM users WHERE id = ?',
+      args: [id]
+    });
+    
+    return result.rowsAffected > 0;
+  }
+
+  // Progress operations
+  async saveProgress(userId: number, questionId: number, genre?: string, subgenre?: string, level?: number): Promise<void> {
+    await this.ensureInitialized();
+    await this.client.execute({
+      sql: `INSERT OR REPLACE INTO user_progress 
+            (user_id, question_id, answered_at, genre, subgenre, level)
+            VALUES (?, ?, ?, ?, ?, ?)`,
+      args: [userId, questionId, new Date().toISOString(), genre, subgenre, level]
+    });
+  }
+
+  async getUserProgress(userId: number): Promise<UserProgressData[]> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'SELECT * FROM user_progress WHERE user_id = ? ORDER BY answered_at DESC',
+      args: [userId]
+    });
+    
+    return result.rows.map(row => ({
+      id: Number(row.id),
+      user_id: Number(row.user_id),
+      question_id: Number(row.question_id),
+      answered_at: String(row.answered_at),
+      genre: row.genre ? String(row.genre) : undefined,
+      subgenre: row.subgenre ? String(row.subgenre) : undefined,
+      level: row.level ? Number(row.level) : undefined,
+    }));
+  }
+
+  async clearUserProgress(userId: number): Promise<boolean> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'DELETE FROM user_progress WHERE user_id = ?',
+      args: [userId]
+    });
+    
+    return result.rowsAffected > 0;
+  }
+
+  // Session operations  
+  async createSession(sessionId: string, userId: number): Promise<void> {
+    await this.ensureInitialized();
+    const now = new Date().toISOString();
+    await this.client.execute({
+      sql: `INSERT OR REPLACE INTO sessions (session_id, user_id, created_at, last_activity)
+            VALUES (?, ?, ?, ?)`,
+      args: [sessionId, userId, now, now]
+    });
+  }
+
+  async getSession(sessionId: string): Promise<{ user_id: number } | null> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'SELECT user_id FROM sessions WHERE session_id = ?',
+      args: [sessionId]
+    });
+    
+    if (result.rows.length === 0) return null;
+    
+    // Update last activity
+    await this.client.execute({
+      sql: 'UPDATE sessions SET last_activity = ? WHERE session_id = ?',
+      args: [new Date().toISOString(), sessionId]
+    });
+    
+    return { user_id: Number(result.rows[0].user_id) };
+  }
+
+  async deleteSession(sessionId: string): Promise<boolean> {
+    await this.ensureInitialized();
+    const result = await this.client.execute({
+      sql: 'DELETE FROM sessions WHERE session_id = ?',
+      args: [sessionId]
+    });
+    
+    return result.rowsAffected > 0;
+  }
+
+  // Utility methods
+  close(): void {
+    this.client.close();
+  }
+}

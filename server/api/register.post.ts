@@ -43,7 +43,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Check if user already exists
-    const existingUser = database.getUserByEmail(email);
+    const existingUser = await database.getUserByEmail(email);
     if (existingUser) {
       event.res.statusCode = 409;
       return { 
@@ -58,10 +58,10 @@ export default defineEventHandler(async (event) => {
 
     // Create user
     const displayName = username || email.split('@')[0];
-    const newUser = database.createUser(email, displayName, passwordHash);
+    const newUser = await database.createUser(email, displayName, passwordHash);
 
     // Create session
-    const sessionId = sessionStore.createSession(email, displayName);
+    const sessionId = await sessionStore.createSession(email, displayName);
 
     // Set secure cookie
     setCookie(event, 'session', sessionId, {

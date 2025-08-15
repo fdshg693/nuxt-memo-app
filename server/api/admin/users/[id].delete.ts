@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const currentUser = database.getUserById(session.user_id);
+    const currentUser = await database.getUserById(session.user_id);
     if (!currentUser || !currentUser.is_admin) {
       throw createError({
         statusCode: 403,
@@ -32,7 +32,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Check if user exists
-    const userToDelete = database.getUserById(userId);
+    const userToDelete = await database.getUserById(userId);
     if (!userToDelete) {
       throw createError({
         statusCode: 404,
@@ -49,7 +49,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Delete user
-    const success = database.deleteUser(userId);
+    const success = await database.deleteUser(userId);
     
     if (!success) {
       throw createError({

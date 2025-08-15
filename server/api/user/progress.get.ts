@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = sessionStore.getSession(sessionId);
+    const session = await sessionStore.getSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
     
     try {
-        const progress = database.getUserProgress(session.userId);
+        const progress = await database.getUserProgress(session.userId);
         
         // Transform to match frontend format
         const correctAnswers = progress.map(p => ({

@@ -135,7 +135,7 @@ class SQLiteAdapter implements DatabaseAdapter {
   }
 
   // User operations
-  createUser(email: string, username: string, passwordHash?: string, isAdmin: boolean = false): UserData {
+  async createUser(email: string, username: string, passwordHash?: string, isAdmin: boolean = false): Promise<UserData> {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
       INSERT INTO users (email, username, password_hash, is_admin, created_at, updated_at)
@@ -147,7 +147,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     return this.getUserById(Number(result.lastInsertRowid))!;
   }
 
-  getUserByEmail(email: string): UserData | null {
+  async getUserByEmail(email: string): Promise<UserData | null> {
     const stmt = this.db.prepare('SELECT * FROM users WHERE email = ?');
     const result = stmt.get(email) as any;
     if (result) {
@@ -156,7 +156,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     return result as UserData | null;
   }
 
-  getUserById(id: number): UserData | null {
+  async getUserById(id: number): Promise<UserData | null> {
     const stmt = this.db.prepare('SELECT * FROM users WHERE id = ?');
     const result = stmt.get(id) as any;
     if (result) {
@@ -165,7 +165,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     return result as UserData | null;
   }
 
-  getAllUsers(): UserData[] {
+  async getAllUsers(): Promise<UserData[]> {
     const stmt = this.db.prepare('SELECT * FROM users ORDER BY created_at DESC');
     const results = stmt.all() as any[];
     return results.map(result => {
@@ -174,7 +174,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     });
   }
 
-  updateUser(id: number, data: Partial<UserData>): boolean {
+  async updateUser(id: number, data: Partial<UserData>): Promise<boolean> {
     const updates = [];
     const values = [];
     
@@ -221,9 +221,9 @@ class SQLiteAdapter implements DatabaseAdapter {
     return stmt.run(...values).changes > 0;
   }
 
-  deleteUser(id: number): boolean {
+  async deleteUser(id: number): Promise<boolean> {
     // First delete user's progress and sessions
-    this.clearUserProgress(id);
+    await this.clearUserProgress(id);
     const deleteSessionsStmt = this.db.prepare('DELETE FROM sessions WHERE user_id = ?');
     deleteSessionsStmt.run(id);
     
@@ -233,7 +233,7 @@ class SQLiteAdapter implements DatabaseAdapter {
   }
 
   // Progress operations
-  saveProgress(userId: number, questionId: number, genre?: string, subgenre?: string, level?: number): void {
+  async saveProgress(userId: number, questionId: number, genre?: string, subgenre?: string, level?: number): Promise<void> {
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO user_progress 
       (user_id, question_id, answered_at, genre, subgenre, level)
@@ -243,18 +243,18 @@ class SQLiteAdapter implements DatabaseAdapter {
     stmt.run(userId, questionId, new Date().toISOString(), genre, subgenre, level);
   }
 
-  getUserProgress(userId: number): UserProgressData[] {
+  async getUserProgress(userId: number): Promise<UserProgressData[]> {
     const stmt = this.db.prepare('SELECT * FROM user_progress WHERE user_id = ? ORDER BY answered_at DESC');
     return stmt.all(userId) as UserProgressData[];
   }
 
-  clearUserProgress(userId: number): boolean {
+  async clearUserProgress(userId: number): Promise<boolean> {
     const stmt = this.db.prepare('DELETE FROM user_progress WHERE user_id = ?');
     return stmt.run(userId).changes > 0;
   }
 
   // Session operations  
-  createSession(sessionId: string, userId: number): void {
+  async createSession(sessionId: string, userId: number): Promise<void> {
     const now = new Date().toISOString();
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO sessions (session_id, user_id, created_at, last_activity)
@@ -263,7 +263,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     stmt.run(sessionId, userId, now, now);
   }
 
-  getSession(sessionId: string): { user_id: number } | null {
+  async getSession(sessionId: string): Promise<{ user_id: number } | null> {
     const stmt = this.db.prepare('SELECT user_id FROM sessions WHERE session_id = ?');
     const session = stmt.get(sessionId) as { user_id: number } | null;
     
@@ -276,7 +276,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     return session;
   }
 
-  deleteSession(sessionId: string): boolean {
+  async deleteSession(sessionId: string): Promise<boolean> {
     const stmt = this.db.prepare('DELETE FROM sessions WHERE session_id = ?');
     return stmt.run(sessionId).changes > 0;
   }

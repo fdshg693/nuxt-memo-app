@@ -16,30 +16,30 @@ class SessionStore {
     return randomBytes(32).toString('hex');
   }
   
-  createSession(email: string, username: string): string {
+  async createSession(email: string, username: string): Promise<string> {
     const sessionId = this.generateSessionId();
     
     // Get or create user in database
-    let user = database.getUserByEmail(email);
+    let user = await database.getUserByEmail(email);
     if (!user) {
-      user = database.createUser(email, username);
+      user = await database.createUser(email, username);
     } else if (user.username !== username) {
       // Update username if it has changed
-      database.updateUser(user.id, { username });
-      user = database.getUserById(user.id)!;
+      await database.updateUser(user.id, { username });
+      user = await database.getUserById(user.id)!;
     }
     
     // Store session in database
-    database.createSession(sessionId, user.id);
+    await database.createSession(sessionId, user.id);
     
     return sessionId;
   }
   
-  getSession(sessionId: string): SessionData | null {
-    const session = database.getSession(sessionId);
+  async getSession(sessionId: string): Promise<SessionData | null> {
+    const session = await database.getSession(sessionId);
     if (!session) return null;
     
-    const user = database.getUserById(session.user_id);
+    const user = await database.getUserById(session.user_id);
     if (!user) return null;
     
     return {
@@ -51,8 +51,8 @@ class SessionStore {
     };
   }
   
-  destroySession(sessionId: string): boolean {
-    return database.deleteSession(sessionId);
+  async destroySession(sessionId: string): Promise<boolean> {
+    return await database.deleteSession(sessionId);
   }
   
   // Clean up expired sessions (optional - for production you might want to run this periodically)
@@ -78,12 +78,12 @@ export const getSessionUser = async (event: any) => {
     return null;
   }
   
-  const session = await getSession(sessionId);
+  const session = await getDbSession(sessionId);
   
   if (!session) {
     return null;
   }
   
   // Get user details from database
-  return database.getUserById(session.user_id);
+  return await database.getUserById(session.user_id);
 };

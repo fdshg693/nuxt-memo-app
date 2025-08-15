@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const currentUser = database.getUserById(session.user_id);
+    const currentUser = await database.getUserById(session.user_id);
     if (!currentUser || !currentUser.is_admin) {
       throw createError({
         statusCode: 403,
@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
     const { username, is_admin } = body;
 
     // Check if user exists
-    const userToUpdate = database.getUserById(userId);
+    const userToUpdate = await database.getUserById(userId);
     if (!userToUpdate) {
       throw createError({
         statusCode: 404,
@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
     if (username !== undefined) updateData.username = username;
     if (is_admin !== undefined) updateData.is_admin = is_admin;
 
-    const success = database.updateUser(userId, updateData);
+    const success = await database.updateUser(userId, updateData);
     
     if (!success) {
       throw createError({
@@ -58,7 +58,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Return updated user
-    const updatedUser = database.getUserById(userId);
+    const updatedUser = await database.getUserById(userId);
     return {
       id: updatedUser!.id,
       email: updatedUser!.email,

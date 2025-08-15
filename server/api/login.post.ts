@@ -12,13 +12,13 @@ export default defineEventHandler(async (event) => {
         const username = 'テストユーザー';
         
         // Create or get test user
-        let user = database.getUserByEmail(email);
+        let user = await database.getUserByEmail(email);
         if (!user) {
-            user = database.createUser(email, username);
+            user = await database.createUser(email, username);
         }
         
         // セッションIDを生成（データベースに永続化）
-        const sessionId = sessionStore.createSession(email, username);
+        const sessionId = await sessionStore.createSession(email, username);
         
         // HttpOnly、Secure、SameSite cookieをセット（JavaScriptからアクセス不可）
         setCookie(event, 'session', sessionId, {
@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Regular user authentication with password hashing
-    const user = database.getUserByEmail(email);
+    const user = await database.getUserByEmail(email);
     if (!user) {
         event.res.statusCode = 401;
         return { 
@@ -68,7 +68,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Authentication successful
-    const sessionId = sessionStore.createSession(user.email, user.username);
+    const sessionId = await sessionStore.createSession(user.email, user.username);
     
     setCookie(event, 'session', sessionId, {
         httpOnly: true,

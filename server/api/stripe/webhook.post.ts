@@ -48,7 +48,7 @@ export default defineEventHandler(async (event) => {
         
         if (session.metadata?.userId) {
           const userId = parseInt(session.metadata.userId);
-          database.updateUser(userId, {
+          await database.updateUser(userId, {
             subscription_status: 'active',
             subscription_id: session.subscription as string
           });
@@ -61,11 +61,11 @@ export default defineEventHandler(async (event) => {
         console.log('Subscription updated:', subscription.id);
         
         // Find user by customer ID
-        const users = database.getAllUsers();
+        const users = await database.getAllUsers();
         const user = users.find(u => u.stripe_customer_id === subscription.customer);
         
         if (user) {
-          database.updateUser(user.id, {
+          await database.updateUser(user.id, {
             subscription_status: subscription.status,
             subscription_id: subscription.id
           });
@@ -78,11 +78,11 @@ export default defineEventHandler(async (event) => {
         console.log('Subscription deleted:', deletedSubscription.id);
         
         // Find user by customer ID
-        const allUsers = database.getAllUsers();
+        const allUsers = await database.getAllUsers();
         const userToUpdate = allUsers.find(u => u.stripe_customer_id === deletedSubscription.customer);
         
         if (userToUpdate) {
-          database.updateUser(userToUpdate.id, {
+          await database.updateUser(userToUpdate.id, {
             subscription_status: 'canceled',
             subscription_id: null
           });

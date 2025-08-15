@@ -39,7 +39,7 @@ export default defineEventHandler(async (event) => {
       customerId = customer.id;
       
       // Update user with Stripe customer ID
-      database.updateUser(user.id, { stripe_customer_id: customerId });
+      await database.updateUser(user.id, { stripe_customer_id: customerId });
     }
 
     // Create checkout session
