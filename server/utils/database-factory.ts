@@ -10,6 +10,11 @@ export class DatabaseFactory {
       case 'sqlite':
         return sqliteAdapter;
       case 'turso':
+        // Check if Turso environment variables are available
+        if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+          console.warn('Turso environment variables not found, falling back to SQLite');
+          return sqliteAdapter;
+        }
         return new TursoAdapter();
       case 'mysql':
         // Future implementation
@@ -23,7 +28,7 @@ export class DatabaseFactory {
   }
 }
 
-// Export default database instance - now defaults to Turso
+// Export default database instance - now defaults to Turso with SQLite fallback
 export const database = DatabaseFactory.create(
   (process.env.DATABASE_TYPE as 'sqlite' | 'mysql' | 'postgresql' | 'turso') || 'turso'
 );
