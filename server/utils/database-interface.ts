@@ -7,6 +7,9 @@ export interface UserData {
   is_admin: boolean;
   created_at: string;
   updated_at: string;
+  stripe_customer_id?: string;
+  subscription_status?: string;
+  subscription_id?: string;
 }
 
 export interface UserProgressData {
