@@ -4,37 +4,53 @@ Dont forget to update this file whenever the content is wrong or becomes wrong f
 # Copilot Instructions for Nuxt Memo App
 
 ## Project Overview
-This is a Japanese educational web app built with Nuxt 3 for learning SQL, quizzes, and games. The app features a complete user authentication system with database persistence, in-browser SQL execution via AlaSQL, and integrates OpenAI for SQL assistance.
+This is a comprehensive Japanese educational web app built with Nuxt 3 for learning SQL, featuring advanced user authentication, subscription management, AI-powered learning assistance, and secure code execution. The app includes database persistence, in-browser SQL execution via AlaSQL, and integrates OpenAI for intelligent learning support.
 
 ## Architecture & Data Flow
 
 ### Core Structure
-- **Pages**: File-based routing with `/sql/[[id]].vue` for dynamic SQL questions, `/quiz.vue`, `/janken.vue`, `/login.vue`, `/register.vue`, `/profile.vue`
-- **Composables**: State management via `useSqlQuiz()`, `useSqlDb()`, `useAuth()`, `useUserProgress()` - prefer these over stores
-- **Data**: Static JSON files in `/data/` drive content (questions, databases, explanations)
-- **Components**: Reusable UI components follow `PascalCase.vue` naming
-- **Database**: SQLite database with abstraction layer for user data and progress tracking
+- **Pages**: File-based routing with comprehensive page coverage:
+  - `/sql/[[id]].vue` for dynamic SQL questions
+  - `/admin.vue` for administrative dashboard
+  - `/playground.vue` for secure JavaScript execution
+  - `/subscription.vue` for Stripe payment management
+  - `/profile.vue` for user profile management
+  - `/quiz.vue`, `/janken.vue` for interactive learning
+  - `/login.vue`, `/register.vue` for authentication
+- **Composables**: Advanced state management via multiple specialized composables
+- **Data**: Static JSON files in `/data/` drive educational content
+- **Components**: Reusable UI components with security-focused design
+- **Database**: SQLite database with production-ready abstraction layer
+- **DOCS**: Organized documentation under `/DOCS/` directory for project maintenance
 
-### User Authentication System
-Complete user authentication with database persistence:
+### User Authentication & Management System
+Complete enterprise-grade authentication with database persistence:
 
 #### Database Abstraction Layer
 - `DatabaseAdapter` interface ensures consistent API across database implementations
 - `DatabaseFactory` enables easy switching between SQLite/MySQL/PostgreSQL via `DATABASE_TYPE` environment variable
 - SQLite adapter with automatic schema migrations and session management
 - Database path handling for both development (`/data/users.db`) and serverless production (`/tmp/users.db`)
+- Comprehensive user management with admin role support
 
 #### Authentication Flow
 ```typescript
-// useAuth.ts - Database-backed authentication
+// useAuth.ts - Database-backed authentication with session management
 const { isLoggedIn, userProfile, username, checkAuth, login, register, logout } = useAuth();
 
-// User registration with validation
+// User registration with validation and secure password hashing
 const result = await register(email, password, username);
 
-// Session-based login with secure cookies
+// Session-based login with secure HttpOnly cookies
 const result = await login(email, password);
 ```
+
+#### Admin Dashboard Features
+- User statistics and management interface
+- Role-based access control (admin vs regular users)
+- User creation and management capabilities
+- Progress monitoring across all users
+- AI question generation administration
 
 #### User Progress Tracking
 ```typescript
@@ -70,6 +86,66 @@ The system supports two types of SQL questions:
    - Support specialized genres: `PERFORMANCE`, `TRANSACTION`, `DEADLOCK`
    - Use `SqlAnalysisPanel` component with user answer input
 
+### AI Integration & Question Generation
+Advanced AI features powered by OpenAI API:
+
+#### AI Learning Assistant
+OpenAI API calls go through `/server/api/openai.post.ts` with built-in prompt injection protection:
+- Only SQL-related prompts are allowed
+- System prompt restricts responses to SQL education
+- **Specialized Analysis Prompts**: Different AI strategies based on question genre:
+  - `PERFORMANCE`: Focus on execution plans, indexing, scalability
+  - `TRANSACTION`: Cover isolation levels, concurrency control, ACID properties
+  - `DEADLOCK`: Examine resource ordering and prevention strategies
+- Configure `OPENAI_API_KEY` in runtime config
+
+#### AI Question Generation
+```typescript
+// useAI.ts - Centralized AI service with GPT-5 support
+const { callOpenAI, callOpenAIWithMock } = useAI();
+
+// server/api/generate-question.post.ts - AI-powered question generation
+// Validates database schemas before generation
+// Generates educational content with appropriate difficulty levels
+```
+
+### Subscription & Payment System
+Complete Stripe integration for monetization:
+
+#### Stripe Integration
+```typescript
+// server/api/stripe/ - Payment processing endpoints
+// create-checkout-session.post.ts - Secure payment initiation
+// subscription-status.get.ts - Real-time subscription status
+// webhook.post.ts - Stripe webhook handling
+```
+
+#### Subscription Management
+- Three-tier pricing: Basic, Pro, Enterprise
+- Real-time subscription status monitoring
+- Secure payment processing with Stripe
+- Subscription status affects feature access
+
+### Secure JavaScript Execution Environment
+Advanced security features for code playground:
+
+#### Security Implementation
+```typescript
+// useSecureJavaScriptExecution.ts - Isolated code execution
+// Comprehensive sandboxing with:
+// - Network access blocking
+// - DOM manipulation prevention
+// - Dangerous API restrictions
+// - Rate limiting (10 executions per minute)
+// - Execution timeout (5 seconds)
+```
+
+#### Playground Features
+- `/playground` page with secure code editor
+- Real-time syntax highlighting
+- Safe execution environment
+- Educational examples and documentation
+
 ### In-Browser SQL Execution
 AlaSQL plugin (`/plugins/alasql.ts`) initializes memory databases on app start:
 - Tables from `sqlDatabases.json` are auto-created
@@ -83,69 +159,97 @@ AlaSQL plugin (`/plugins/alasql.ts`) initializes memory databases on app start:
 // Database abstraction usage
 import { database } from '~/server/utils/database-factory';
 
-// User operations
-const user = database.createUser(email, username, passwordHash);
+// User operations with admin support
+const user = database.createUser(email, username, passwordHash, isAdmin);
 const user = database.getUserByEmail(email);
+const users = database.getAllUsers(); // Admin function
 
 // Progress operations
 database.saveProgress(userId, questionId, genre, subgenre, level);
 const progress = database.getUserProgress(userId);
 
-// Session management
+// Session management with automatic cleanup
 database.createSession(sessionId, userId);
 const session = database.getSession(sessionId);
+database.cleanupExpiredSessions();
+```
+
+### Advanced Composables
+```typescript
+// useAI.ts - Centralized AI service
+const { callOpenAI, callOpenAIWithMock } = useAI();
+
+// useDatabaseValidation.ts - Schema validation for AI generation
+const { validateTable, getAvailableTables, getDatabaseSchemaForPrompt } = useDatabaseValidation();
+
+// useSecureJavaScriptExecution.ts - Safe code execution
+const { executeCode, stopExecution, clearResults } = useSecureJavaScriptExecution();
+
+// useUserProgress.ts - Enhanced progress tracking
+const { progress, recordCorrectAnswer, isQuestionAnsweredCorrectly, clearProgress } = useUserProgress();
 ```
 
 ### Styling Conventions
 - TailwindCSS with custom gradient utilities in `/assets/main.css`
 - Use `.btn-gradient` for primary actions, `.btn-sql-question` for secondary
 - Consistent purple/indigo/pink gradient theme throughout
+- Security-focused UI indicators (green for safe, red for dangerous)
 
 ### Component Communication
 ```vue
-<!-- Prefer props/emits over complex state management -->
+<!-- Enhanced component patterns -->
 <SqlEditor v-model="sql" @execute="executeUserSQL" @ask-ai="askAI" />
 <SqlAnalysisPanel :analysisCode="code" @submit-answer="submitAnalysisAnswer" />
+<SecureJavaScriptEditor v-model="code" @execute="executeSecurely" />
+<AdminUserManager :users="users" @create-user="createUser" @toggle-admin="toggleAdmin" />
 ```
 
-### AI Integration
-OpenAI API calls go through `/server/api/openai.post.ts` with built-in prompt injection protection:
-- Only SQL-related prompts are allowed
-- System prompt restricts responses to SQL education
-- **Specialized Analysis Prompts**: Different AI strategies based on question genre:
-  - `PERFORMANCE`: Focus on execution plans, indexing, scalability
-  - `TRANSACTION`: Cover isolation levels, concurrency control, ACID properties
-  - `DEADLOCK`: Examine resource ordering and prevention strategies
-- Configure `OPENAI_API_KEY` in runtime config
-
 ### Route Protection
-Global middleware (`/middleware/auth.global.ts`) protects routes starting with `/janken`:
+Enhanced middleware protection (`/middleware/auth.global.ts`):
 ```typescript
-if (!isLoggedIn.value && to.path.startsWith('/janken')) {
+// Protect admin routes
+if (to.path.startsWith('/admin') && !userIsAdmin) {
     return navigateTo('/login');
+}
+
+// Protect premium features based on subscription
+if (to.path.startsWith('/janken') && !isLoggedIn.value) {
+    return navigateTo('/login');
+}
+
+// Subscription-based access control
+if (isPremiumFeature(to.path) && !hasActiveSubscription) {
+    return navigateTo('/subscription');
 }
 ```
 
 ## File Organization
 
 ### Server Structure
-- `/server/api/`: Authentication endpoints (`login.post.ts`, `register.post.ts`, `logout.post.ts`, `me.get.ts`)
-- `/server/api/user/`: User-specific endpoints (`progress.get.ts`, `progress.post.ts`, `reset.post.ts`)
-- `/server/utils/`: Database abstraction layer and session management
+- `/server/api/`: Comprehensive API endpoints
+  - `admin/`: Administrative functions (user management, question generation)
+  - `stripe/`: Payment processing and subscription management
+  - `user/`: User-specific endpoints (progress, preferences)
+  - `openai.post.ts`: AI integration with security controls
+  - `generate-question.post.ts`: AI-powered content generation
+- `/server/utils/`: Server utilities
+  - `database-factory.ts`: Database abstraction layer
+  - `auth.ts`: Authentication helpers and session management
 
-### Database Schema
+### Enhanced Database Schema
 ```sql
--- Users table with secure password storage
+-- Users table with admin role support
 CREATE TABLE users (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   email TEXT UNIQUE NOT NULL,
   username TEXT NOT NULL,
   password_hash TEXT,
+  is_admin BOOLEAN DEFAULT FALSE,
   created_at TEXT NOT NULL,
   updated_at TEXT NOT NULL
 );
 
--- User progress tracking
+-- User progress tracking with enhanced metadata
 CREATE TABLE user_progress (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER NOT NULL,
@@ -154,16 +258,32 @@ CREATE TABLE user_progress (
   genre TEXT,
   subgenre TEXT,
   level INTEGER,
+  execution_time INTEGER,
+  attempts INTEGER DEFAULT 1,
   FOREIGN KEY (user_id) REFERENCES users(id),
   UNIQUE(user_id, question_id)
 );
 
--- Session management
+-- Session management with enhanced security
 CREATE TABLE sessions (
   session_id TEXT PRIMARY KEY,
   user_id INTEGER NOT NULL,
   created_at TEXT NOT NULL,
   last_activity TEXT NOT NULL,
+  ip_address TEXT,
+  user_agent TEXT,
+  FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+-- Subscription tracking (if using local subscription management)
+CREATE TABLE subscriptions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  stripe_subscription_id TEXT UNIQUE,
+  status TEXT NOT NULL,
+  plan_name TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
   FOREIGN KEY (user_id) REFERENCES users(id)
 );
 ```
@@ -173,16 +293,20 @@ CREATE TABLE sessions (
 - `sqlDatabases.json`: Table schemas and seed data for AlaSQL
 - `sqlExplanation/*.json`: Educational content for each SQL concept
 
-**Analysis Question Structure:**
+**Enhanced Question Structure:**
 ```json
 {
   "id": 20,
   "level": 1,
   "genre": "PERFORMANCE", 
+  "subgenre": "INDEX_OPTIMIZATION",
   "question": "以下のSQLクエリのパフォーマンスを分析し、改善点があれば提案してください",
   "analysisCode": "SELECT * FROM users WHERE name LIKE '%田%' ORDER BY age DESC",
   "type": "analysis",
-  "DbName": "users"
+  "DbName": "users",
+  "difficulty": "intermediate",
+  "estimatedTime": 300,
+  "prerequisites": ["basic_select", "where_clause"]
 }
 ```
 
@@ -191,12 +315,18 @@ CREATE TABLE sessions (
 - `SqlAnalysisPanel.vue`: For code analysis questions with user answer input
 - `SqlQuestionContent.vue`: Question display and navigation
 - `SqlAiAssistant.vue`: AI response display
+- `SecureJavaScriptEditor.vue`: Safe code execution environment
+- `AdminUserManager.vue`: User management interface
+- `SubscriptionManager.vue`: Payment and subscription handling
 
 ### Key Composables
 - `useSqlQuiz()`: Question management and loading
 - `useSqlDb()`: Database schema access via `getDatabaseByName()`
 - `useAuth()`: Complete authentication system with server session management
 - `useUserProgress()`: Server-synchronized progress tracking with local storage fallback
+- `useAI()`: Centralized AI service with mock fallback
+- `useSecureJavaScriptExecution()`: Safe code execution with security controls
+- `useDatabaseValidation()`: Schema validation for AI question generation
 
 ## Development Workflow
 
@@ -206,6 +336,7 @@ CREATE TABLE sessions (
 1. Add to `sqlQuestions.json` with proper genre/subgenre/level
 2. Include `answer` field with correct SQL
 3. Ensure referenced `DbName` exists in `sqlDatabases.json`
+4. Test with actual database schemas
 
 #### Analysis Questions
 1. Add to `sqlQuestions.json` with `type: "analysis"`
@@ -213,11 +344,18 @@ CREATE TABLE sessions (
 3. Use genre: `PERFORMANCE`, `TRANSACTION`, or `DEADLOCK` for specialized AI prompts
 4. Questions auto-appear on index page grouped by taxonomy
 
+#### AI-Generated Questions
+1. Use admin dashboard to access question generation
+2. Specify genre, level, and target database
+3. AI validates against actual database schemas
+4. Generated questions require admin review before publishing
+
 ### Testing Authentication Features
 - Test user registration at `/register`
 - Test login/logout flow with session persistence
 - Verify progress tracking across logout/login cycles
-- Test both legacy test users (1@gmail.com/1234) and new registrations
+- Test admin functions with appropriate permissions
+- Verify subscription-based feature access
 
 ### Testing SQL Features
 - Use browser devtools to inspect AlaSQL state: `window.alasql.databases`
@@ -225,26 +363,89 @@ CREATE TABLE sessions (
 - AI responses appear in purple bordered sections
 - Analysis questions allow user input before AI feedback
 
+### Testing Security Features
+- Verify JavaScript playground isolation
+- Test rate limiting on code execution
+- Confirm dangerous APIs are blocked
+- Validate session security and expiration
+
 ### Environment Setup
 ```bash
 npm run dev  # Standard Nuxt development
-# Requires OPENAI_API_KEY for AI features
-# Optional: DATABASE_TYPE=sqlite|mysql|postgresql (defaults to sqlite)
+
+# Required for full functionality:
+# OPENAI_API_KEY for AI features
+# STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET for payments
+# DATABASE_TYPE=sqlite|mysql|postgresql (defaults to sqlite)
 ```
 
 ### Database Deployment Notes
 - **Development**: Uses `/data/users.db` for persistence
 - **Production/Serverless**: Uses `/tmp/users.db` with automatic directory creation
-- **Future scaling**: Ready for MySQL/PostgreSQL via DATABASE_TYPE environment variable
+- **Scaling**: Ready for MySQL/PostgreSQL via DATABASE_TYPE environment variable
+- **Backup**: Implement regular backup strategy for production user data
+
+## Testing & Quality Assurance
+
+### Testing Stack
+- **Unit Tests**: Vitest for composables and utilities
+- **E2E Tests**: Playwright for full user workflows
+- **Coverage**: Comprehensive test coverage tracking
+- **CI/CD**: Automated testing in GitHub Actions
+
+### Test Development
+- Follow patterns in `/test/` directory
+- Create tests for new composables
+- Test authentication flows thoroughly
+- Verify subscription logic
+- Test AI integration with mocks
+
+### Security Testing
+- Validate input sanitization
+- Test session management
+- Verify subscription access controls
+- Test secure code execution boundaries
 
 ## Project-Specific Notes
 
+### Internationalization
 - All UI text is in Japanese - maintain consistency
+- Error messages should be user-friendly in Japanese
+- Admin interface uses clear Japanese terminology
+
+### Navigation & UX
 - Question navigation uses array indices, not database IDs
 - File naming: `[[id]].vue` for catch-all dynamic routes
-- TypeScript is configured with interfaces for user data and progress tracking
-- Database-first approach ensures data persistence across sessions and devices
+- Consistent navigation patterns across all pages
+
+### Data Management
+- TypeScript interfaces for all data structures
+- Database-first approach ensures data persistence
 - Backward compatibility maintained for existing test users
-- Analysis questions provide educational experience for theoretical concepts
-- User answers in analysis questions are saved and displayed alongside AI feedback
-- Secure authentication with bcrypt password hashing and HttpOnly session cookies
+- Regular data validation and cleanup
+
+### Security & Privacy
+- Secure authentication with bcrypt password hashing
+- HttpOnly session cookies prevent XSS attacks
+- Isolated JavaScript execution prevents malicious code
+- Payment data handled securely through Stripe
+
+### Performance & Scalability
+- Database abstraction allows easy scaling
+- AlaSQL provides client-side SQL performance
+- Lazy loading for large question sets
+- Efficient session management with cleanup
+
+### Documentation Organization
+- `/DOCS/` directory contains comprehensive technical documentation
+- `README.md` provides user-facing project overview
+- `AGENTS.md` (this file) serves as developer guide
+- Individual feature documentation in `/DOCS/` subdirectories
+
+### Monitoring & Analytics
+- User progress tracking for educational insights
+- Admin dashboard provides usage statistics
+- Subscription metrics through Stripe dashboard
+- Error logging for debugging and improvement
+
+This comprehensive guide should be updated whenever significant changes are made to the architecture, new features are added, or development patterns evolve.
