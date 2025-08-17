@@ -232,7 +232,7 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: `INSERT OR REPLACE INTO user_progress 
             (user_id, question_id, answered_at, genre, subgenre, level)
             VALUES (?, ?, ?, ?, ?, ?)`,
-      args: [userId, questionId, new Date().toISOString(), genre, subgenre, level]
+      args: [userId, questionId, new Date().toISOString(), genre ?? null, subgenre ?? null, level ?? null]
     });
   }
 

@@ -240,7 +240,7 @@ class SQLiteAdapter implements DatabaseAdapter {
       VALUES (?, ?, ?, ?, ?, ?)
     `);
     
-    stmt.run(userId, questionId, new Date().toISOString(), genre, subgenre, level);
+    stmt.run(userId, questionId, new Date().toISOString(), genre ?? null, subgenre ?? null, level ?? null);
   }
 
   async getUserProgress(userId: number): Promise<UserProgressData[]> {

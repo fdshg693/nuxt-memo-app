@@ -98,4 +98,38 @@ describe('User Data Persistence', () => {
         expect(session2!.userId).toBe(session1!.userId);
         expect(session2!.email).toBe(session1!.email);
     });
+
+    it('should handle undefined optional parameters in saveProgress', async () => {
+        // Test the exact scenario from the problem statement
+        const questionId = 1;
+        const genre = 'SELECT';
+        const level = 1;
+        // subgenre is undefined (not provided)
+        
+        // This should not throw an error
+        await userDatabase.saveProgress(userId, questionId, genre, undefined, level);
+        
+        // Verify the data was saved correctly
+        const progress = await userDatabase.getUserProgress(userId);
+        expect(progress).toHaveLength(1);
+        expect(progress[0].question_id).toBe(questionId);
+        expect(progress[0].genre).toBe(genre);
+        expect(progress[0].subgenre).toBeNull(); // Database converts undefined to null
+        expect(progress[0].level).toBe(level);
+    });
+
+    it('should handle all optional parameters as undefined', async () => {
+        const questionId = 2;
+        
+        // All optional parameters are undefined
+        await userDatabase.saveProgress(userId, questionId, undefined, undefined, undefined);
+        
+        // Verify the data was saved correctly
+        const progress = await userDatabase.getUserProgress(userId);
+        const savedProgress = progress.find(p => p.question_id === questionId);
+        expect(savedProgress).toBeTruthy();
+        expect(savedProgress!.genre).toBeNull(); // Database converts undefined to null
+        expect(savedProgress!.subgenre).toBeNull();
+        expect(savedProgress!.level).toBeNull();
+    });
 });
