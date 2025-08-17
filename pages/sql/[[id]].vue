@@ -90,7 +90,7 @@ const route = useRoute();
 const { questions, loadQuestions } = useSqlQuiz();
 const { loadDatabases, getDatabaseByName } = useSqlDb();
 const { isLoggedIn } = useAuth();
-const { recordCorrectAnswer, isQuestionAnsweredCorrectly } = useUserProgress();
+const { recordCorrectAnswer, isQuestionAnsweredCorrectly, loadProgressFromServer } = useUserProgress();
 const { 
   index, 
   sql, 
@@ -343,6 +343,16 @@ watch([questions, index], async () => {
 onMounted(async () => {
     await loadQuestions();
     await loadDatabases();
+    
+    // Initialize user progress if logged in
+    if (isLoggedIn.value) {
+        try {
+            await loadProgressFromServer();
+        } catch (error) {
+            console.warn('Failed to load progress in SQL page:', error);
+        }
+    }
+    
     setRouteParams();
     setCurrentQA();
     await createUserCopyTables(currentQA.value.dbs);
