@@ -7,8 +7,10 @@ export class TursoAdapter implements DatabaseAdapter {
   private initPromise: Promise<void>;
 
   constructor() {
-    const url = process.env.TURSO_DATABASE_URL;
-    const authToken = process.env.TURSO_AUTH_TOKEN;
+    // Use runtime config for environment variables in Nuxt
+    const config = useRuntimeConfig?.() || {};
+    const url = config.tursoUrl || process.env.TURSO_DATABASE_URL;
+    const authToken = config.tursoAuthToken || process.env.TURSO_AUTH_TOKEN;
 
     if (!url || !authToken) {
       throw new Error('TURSO_DATABASE_URL and TURSO_AUTH_TOKEN environment variables are required');

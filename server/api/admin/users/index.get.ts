@@ -15,7 +15,7 @@ export default defineEventHandler(async (event) => {
       });
     }
 
-    const user = await await database.getUserById(session.user_id);
+    const user = await database.getUserById(session.user_id);
     if (!user || !user.is_admin) {
       throw createError({
         statusCode: 403,
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // Get all users
-    const users = await await database.getAllUsers();
+    const users = await database.getAllUsers();
     
     // Remove sensitive information
     const safeUsers = users.map(user => ({

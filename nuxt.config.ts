@@ -13,6 +13,10 @@ export default defineNuxtConfig({
     openaiApiKey: process.env.OPENAI_API_KEY,
     stripeSecretKey: process.env.STRIPE_SECRET_KEY,
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
+    // Turso database configuration
+    tursoUrl: process.env.TURSO_DATABASE_URL,
+    tursoAuthToken: process.env.TURSO_AUTH_TOKEN,
+    databaseType: process.env.DATABASE_TYPE,
     // クライアントにも公開するキー（NUXT_PUBLIC_ が自動的に消えます）
     public: {
       apiKey: process.env.NUXT_PUBLIC_API_KEY,
