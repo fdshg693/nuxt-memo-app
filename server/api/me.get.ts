@@ -19,7 +19,7 @@ export default defineEventHandler(async (event) => {
     }
     
     // Get user details from database to include admin status
-    const user = database.getUserById(session.user_id);
+    const user = await database.getUserById(session.user_id);
     
     if (!user) {
         event.res.statusCode = 401;
