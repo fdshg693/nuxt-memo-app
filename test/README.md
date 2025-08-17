@@ -175,4 +175,4 @@ npm run test:coverage
 
 ## 参考
 
-テスト実装は `copilot_agent/test.md` の詳細なガイドラインに基づいています。
+テスト実装は `DOCS/test-development-guide.md` の詳細なガイドラインに基づいています。
