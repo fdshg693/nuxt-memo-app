@@ -5,11 +5,14 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     
     const { isLoggedIn, checkAuth } = useAuth();
 
+    // Always check authentication state when navigating
+    // This ensures session consistency across all page transitions
+    await checkAuth();
+
     // /profile や /janken など保護ルートにアクセスする場合
     if (to.path.startsWith('/profile') || to.path.startsWith('/janken')) {
         // セッション状態をチェック
-        const isAuthenticated = await checkAuth();
-        if (!isAuthenticated) {
+        if (!isLoggedIn.value) {
             return navigateTo('/login');
         }
     }
