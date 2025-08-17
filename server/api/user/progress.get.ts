@@ -1,6 +1,6 @@
 // server/api/user/progress.get.ts
 import { defineEventHandler, getCookie } from 'h3';
-import { sessionStore } from '~/server/utils/sessionStore';
+import { getDbSession } from '~/server/utils/sessionStore';
 import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = await sessionStore.getSession(sessionId);
+    const session = await getDbSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
@@ -19,7 +19,14 @@ export default defineEventHandler(async (event) => {
     }
     
     try {
-        const progress = await database.getUserProgress(session.userId);
+        // Get user details to include username in response
+        const user = await database.getUserById(session.user_id);
+        if (!user) {
+            event.res.statusCode = 401;
+            return { error: 'ユーザーが見つかりません' };
+        }
+        
+        const progress = await database.getUserProgress(session.user_id);
         
         // Transform to match frontend format
         const correctAnswers = progress.map(p => ({
@@ -31,7 +38,7 @@ export default defineEventHandler(async (event) => {
         }));
         
         return {
-            username: session.username,
+            username: user.username,
             correctAnswers,
             stats: {
                 totalCorrect: correctAnswers.length,

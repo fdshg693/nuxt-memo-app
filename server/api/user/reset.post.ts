@@ -1,6 +1,6 @@
 // server/api/user/reset.post.ts
 import { defineEventHandler, getCookie } from 'h3';
-import { sessionStore } from '~/server/utils/sessionStore';
+import { getDbSession } from '~/server/utils/sessionStore';
 import { database } from '~/server/utils/database-factory';
 
 export default defineEventHandler(async (event) => {
@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = await sessionStore.getSession(sessionId);
+    const session = await getDbSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     
     try {
         // Clear all user progress data
-        const cleared = await database.clearUserProgress(session.userId);
+        const cleared = await database.clearUserProgress(session.user_id);
         
         if (cleared) {
             return { 
