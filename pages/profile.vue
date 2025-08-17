@@ -60,7 +60,12 @@
             </div>
 
             <!-- Progress Chart -->
-            <ProgressChart :progress="progress" :show-chart="showChart" />
+            <ProgressChart 
+                :progress="progress" 
+                :show-chart="showChart" 
+                :genre-progress="genreProgress"
+                :level-progress="levelProgress"
+            />
 
             <!-- Progress Details -->
             <div v-if="progress" class="bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
@@ -72,7 +77,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         <div v-for="(stats, genre) in genreProgress" :key="genre" class="bg-gray-50 p-4 rounded-lg">
                             <h4 class="font-medium text-gray-800">{{ genre }}</h4>
-                            <p class="text-sm text-gray-600">正解数: {{ stats.correct }}問</p>
+                            <p class="text-sm text-gray-600">正解数: {{ stats.correct }}/{{ stats.total }}問 ({{ stats.total > 0 ? Math.round((stats.correct / stats.total) * 100) : 0 }}%)</p>
                         </div>
                     </div>
                 </div>
@@ -114,7 +119,7 @@ import ProgressChart from '~/components/ProgressChart.vue';
 
 const router = useRouter();
 const { userProfile, logout: authLogout, isLoggedIn, checkAuth } = useAuth();
-const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, clearProgress, loadProgressFromServer } = useUserProgress();
+const { progress, totalCorrectAnswers, lastActivity, getProgressByGenre, getProgressByLevel, clearProgress, loadProgressFromServer } = useUserProgress();
 
 const isResetting = ref(false);
 const showChart = ref(false);
@@ -136,6 +141,7 @@ onMounted(async () => {
 });
 
 const genreProgress = computed(() => getProgressByGenre());
+const levelProgress = computed(() => getProgressByLevel());
 
 const recentAnswers = computed(() => {
     if (!progress.value) return [];
