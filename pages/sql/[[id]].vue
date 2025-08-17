@@ -139,7 +139,7 @@ function setRouteParams() {
 
 function setCurrentQA() {
     const idx = index.value;
-    if (questions.value.length > 0 && idx >= 0 && idx < questions.value.length) {
+    if (questions.value.length > 0 && idx > 0) {
         const questionSet = questions.value.find(q => q.id === idx);
         if (questionSet) {
             currentQA.value = {

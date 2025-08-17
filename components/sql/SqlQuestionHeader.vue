@@ -4,6 +4,7 @@
     <div class="flex gap-4 mb-4">
       <NuxtLink to="/" class="btn-gradient">トップ</NuxtLink>
       <NuxtLink to="/sql/explanation" class="btn-gradient">SQL解説</NuxtLink>
+      <NuxtLink v-if="isLoggedIn" to="/profile" class="btn-gradient bg-gradient-to-r from-purple-600 to-indigo-600">プロフィール</NuxtLink>
     </div>
 
     <!-- Genre explanation links -->
@@ -28,6 +29,10 @@
 </template>
 
 <script setup lang="ts">
+import { useAuth } from '~/composables/useAuth';
+
+const { isLoggedIn } = useAuth();
+
 interface QuestionAnswer {
   genre: string[];
   subgenre: string[];

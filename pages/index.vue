@@ -69,7 +69,7 @@ import { useUserProgress } from '~/composables/useUserProgress';
 const router = useRouter();
 const { questions, loadQuestions } = useSqlQuiz();
 const { isLoggedIn, username, userProfile, logout: authLogout } = useAuth();
-const { isQuestionAnsweredCorrectly, clearProgress } = useUserProgress();
+const { isQuestionAnsweredCorrectly, clearProgress, loadProgressFromServer } = useUserProgress();
 
 const groupedQuestions = computed(() => {
     // genre→subgenre→level順でグループ化
@@ -96,7 +96,14 @@ const logout = async () => {
     await router.push('/login');
 };
 
-onMounted(() => {
+onMounted(async () => {
     loadQuestions();
+    if (isLoggedIn.value) {
+        try {
+            await loadProgressFromServer();
+        } catch (error) {
+            console.warn('Failed to load progress from server:', error);
+        }
+    }
 })
 </script>

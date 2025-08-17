@@ -1,5 +1,6 @@
 // composables/useUserProgress.ts
 import { ref, computed } from 'vue';
+import sqlQuestions from '@/data/sqlQuestions.json';
 
 export interface QuestionProgress {
     questionId: number;
@@ -138,15 +139,49 @@ export const useUserProgress = () => {
         
         const genreStats: Record<string, { total: number; correct: number }> = {};
         
-        userProgress.value.correctAnswers.forEach(answer => {
-            const genre = answer.genre || 'その他';
+        // Initialize with total counts from all questions
+        sqlQuestions.forEach(question => {
+            const genre = question.genre || 'その他';
             if (!genreStats[genre]) {
                 genreStats[genre] = { total: 0, correct: 0 };
             }
-            genreStats[genre].correct++;
+            genreStats[genre].total++;
+        });
+        
+        // Add correct answer counts
+        userProgress.value.correctAnswers.forEach(answer => {
+            const genre = answer.genre || 'その他';
+            if (genreStats[genre]) {
+                genreStats[genre].correct++;
+            }
         });
 
         return genreStats;
+    };
+
+    const getProgressByLevel = () => {
+        if (!userProgress.value) return {};
+        
+        const levelStats: Record<string, { total: number; correct: number }> = {};
+        
+        // Initialize with total counts from all questions
+        sqlQuestions.forEach(question => {
+            const level = question.level ? `Level ${question.level}` : 'レベル未設定';
+            if (!levelStats[level]) {
+                levelStats[level] = { total: 0, correct: 0 };
+            }
+            levelStats[level].total++;
+        });
+        
+        // Add correct answer counts
+        userProgress.value.correctAnswers.forEach(answer => {
+            const level = answer.level ? `Level ${answer.level}` : 'レベル未設定';
+            if (levelStats[level]) {
+                levelStats[level].correct++;
+            }
+        });
+
+        return levelStats;
     };
 
     const clearProgress = async (): Promise<boolean> => {
@@ -194,6 +229,7 @@ export const useUserProgress = () => {
         recordCorrectAnswer,
         isQuestionAnsweredCorrectly,
         getProgressByGenre,
+        getProgressByLevel,
         clearProgress,
         loadProgressFromServer
     };

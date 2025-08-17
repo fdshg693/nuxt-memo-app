@@ -64,6 +64,8 @@ interface ProgressData {
 const props = defineProps<{
   progress: ProgressData | null;
   showChart: boolean;
+  genreProgress?: Record<string, { total: number; correct: number }>;
+  levelProgress?: Record<string, { total: number; correct: number }>;
 }>();
 
 // Chart canvas refs
@@ -91,16 +93,13 @@ const colors = [
 ];
 
 const createGenreChart = () => {
-  if (!genreChartCanvas.value || !props.progress) return;
+  if (!genreChartCanvas.value || !props.genreProgress) return;
 
-  const genreData = props.progress.correctAnswers.reduce((acc, answer) => {
-    const genre = answer.genre || 'その他';
-    acc[genre] = (acc[genre] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const labels = Object.keys(genreData);
-  const data = Object.values(genreData);
+  const labels = Object.keys(props.genreProgress);
+  const data = labels.map(genre => {
+    const genreData = props.genreProgress![genre];
+    return genreData.total > 0 ? (genreData.correct / genreData.total) * 100 : 0;
+  });
 
   const config = {
     type: 'doughnut',
@@ -124,10 +123,9 @@ const createGenreChart = () => {
           callbacks: {
             label: (context) => {
               const label = context.label || '';
-              const value = context.parsed;
-              const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `${label}: ${value}問 (${percentage}%)`;
+              const percentage = context.parsed.toFixed(1);
+              const genreData = props.genreProgress![label];
+              return `${label}: ${genreData.correct}/${genreData.total}問 (${percentage}%)`;
             }
           }
         }
@@ -199,16 +197,17 @@ const createTimeChart = () => {
 };
 
 const createLevelChart = () => {
-  if (!levelChartCanvas.value || !props.progress) return;
+  if (!levelChartCanvas.value || !props.levelProgress) return;
 
-  const levelData = props.progress.correctAnswers.reduce((acc, answer) => {
-    const level = answer.level ? `Level ${answer.level}` : 'レベル未設定';
-    acc[level] = (acc[level] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-
-  const labels = Object.keys(levelData).sort();
-  const data = labels.map(label => levelData[label]);
+  const labels = Object.keys(props.levelProgress).sort();
+  const data = labels.map(level => {
+    const levelData = props.levelProgress![level];
+    return levelData.correct;
+  });
+  const maxData = labels.map(level => {
+    const levelData = props.levelProgress![level];
+    return levelData.total;
+  });
 
   const config = {
     type: 'bar',
@@ -220,6 +219,12 @@ const createLevelChart = () => {
         backgroundColor: '#10B981',
         borderColor: '#059669',
         borderWidth: 1,
+      }, {
+        label: '総問題数',
+        data: maxData,
+        backgroundColor: '#E5E7EB',
+        borderColor: '#9CA3AF',
+        borderWidth: 1,
       }]
     },
     options: {
@@ -227,7 +232,16 @@ const createLevelChart = () => {
       maintainAspectRatio: false,
       plugins: {
         legend: {
-          display: false,
+          display: true,
+        },
+        tooltip: {
+          callbacks: {
+            afterLabel: (context) => {
+              const levelData = props.levelProgress![context.label];
+              const percentage = levelData.total > 0 ? ((levelData.correct / levelData.total) * 100).toFixed(1) : '0';
+              return `進捗率: ${percentage}%`;
+            }
+          }
         }
       },
       scales: {
@@ -251,13 +265,28 @@ const createTrendChart = () => {
     new Date(a.answeredAt).getTime() - new Date(b.answeredAt).getTime()
   );
 
+  // Group answers by date and calculate cumulative totals
+  const dailyData: Record<string, number> = {};
+  let cumulativeCount = 0;
+  
+  answers.forEach(answer => {
+    const date = new Date(answer.answeredAt).toISOString().split('T')[0];
+    if (!dailyData[date]) {
+      dailyData[date] = 0;
+    }
+    dailyData[date]++;
+  });
+
+  // Convert to cumulative data points
+  const sortedDates = Object.keys(dailyData).sort();
   const labels: string[] = [];
   const data: number[] = [];
   
-  answers.forEach((answer, index) => {
-    const date = new Date(answer.answeredAt);
-    labels.push(`${date.getMonth() + 1}/${date.getDate()} ${date.getHours()}:${date.getMinutes().toString().padStart(2, '0')}`);
-    data.push(index + 1);
+  sortedDates.forEach(date => {
+    cumulativeCount += dailyData[date];
+    const dateObj = new Date(date);
+    labels.push(`${dateObj.getMonth() + 1}/${dateObj.getDate()}`);
+    data.push(cumulativeCount);
   });
 
   const config = {
@@ -279,6 +308,15 @@ const createTrendChart = () => {
       plugins: {
         legend: {
           display: false,
+        },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const date = sortedDates[context.dataIndex];
+              const dailyCount = dailyData[date];
+              return `累積: ${context.parsed.y}問 (この日: ${dailyCount}問)`;
+            }
+          }
         }
       },
       scales: {
