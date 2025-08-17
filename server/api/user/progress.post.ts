@@ -1,6 +1,6 @@
 // server/api/user/progress.post.ts
 import { defineEventHandler, getCookie, readBody } from 'h3';
-import { sessionStore } from '~/server/utils/sessionStore';
+import { getDbSession } from '~/server/utils/sessionStore';
 import { database } from '~/server/utils/database-factory';
 
 interface SaveProgressRequest {
@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
         return { error: 'セッションが見つかりません' };
     }
     
-    const session = await sessionStore.getSession(sessionId);
+    const session = await getDbSession(sessionId);
     
     if (!session) {
         event.res.statusCode = 401;
@@ -34,7 +34,7 @@ export default defineEventHandler(async (event) => {
         }
         
         // Save progress to database
-        await database.saveProgress(session.userId, questionId, genre, subgenre, level);
+        await database.saveProgress(session.user_id, questionId, genre, subgenre, level);
         
         return { success: true, message: '進捗が保存されました' };
     } catch (error) {
