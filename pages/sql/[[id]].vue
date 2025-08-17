@@ -25,7 +25,7 @@
             <!-- Question Content -->
             <SqlQuestionContent 
                 :current-q-a="currentQA"
-                :index="index"
+                :index="currentQuestionIndex"
                 :questions-length="questions.length"
                 :already-answered="currentQuestionAnswered"
                 @prev="prevQuestion"
@@ -124,6 +124,17 @@ const currentQuestionAnswered = computed(() => {
     if (!isLoggedIn.value) return false;
     const currentQuestion = questions.value.find(q => q.id === index.value);
     return currentQuestion ? isQuestionAnsweredCorrectly(currentQuestion.id) : false;
+});
+
+const currentQuestionIndex = computed(() => {
+    // Convert 1-based question ID to 0-based array index for navigation
+    if (questions.value.length === 0 || index.value === 0) {
+        return 0; // Return 0 as default when questions haven't loaded yet
+    }
+    
+    const availableIds = questions.value.map(q => q.id).sort((a, b) => a - b);
+    const computedIndex = availableIds.indexOf(index.value);
+    return computedIndex >= 0 ? computedIndex : 0;
 });
 
 // ===== Utility Functions =====
