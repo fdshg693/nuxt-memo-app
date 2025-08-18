@@ -1,28 +1,33 @@
 <template>
     <div
         class="bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 min-h-screen flex flex-col items-center justify-start py-8">
-        <!-- Header and Navigation -->
-        <SqlQuestionHeader :current-q-a="currentQA" />
-        
-        <!-- Main Content -->
-        <div id="app" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
-            <!-- AI Question Generator -->
-            <SqlQuestionGenerator 
-                v-if="showQuestionGenerator"
-                @question-generated="handleGeneratedQuestion"
-            />
-            
-            <!-- Toggle Button for Question Generator -->
-            <div class="mb-4 text-center">
-                <button
-                    @click="toggleQuestionGenerator"
-                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
-                >
-                    {{ showQuestionGenerator ? 'AI問題生成を閉じる' : 'AI問題を生成' }}
-                </button>
+        <!-- Loading State -->
+        <div v-if="isPageLoading" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
+            <div class="flex flex-col items-center justify-center py-16">
+                <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mb-4"></div>
+                <p class="text-purple-600 font-medium">データを読み込んでいます...</p>
+                <p class="text-sm text-gray-500 mt-2">SQL問題とデータベース情報を準備中</p>
             </div>
+        </div>
 
-            <!-- Question Content -->
+        <!-- Main Content (only shown when fully loaded) -->
+        <template v-else>
+            <!-- Header and Navigation -->
+            <SqlQuestionHeader :current-q-a="currentQA" />
+            
+            <!-- Main Content -->
+            <div id="app" class="max-w-2xl w-full mx-auto bg-white rounded-2xl shadow-xl p-8 border border-purple-100">
+                <!-- Navigate to Question Generator Button -->
+                <div class="mb-4 text-center">
+                    <button
+                        @click="navigateToGenerator"
+                        class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium"
+                    >
+                        AI問題を生成
+                    </button>
+                </div>
+
+                <!-- Question Content -->
             <SqlQuestionContent 
                 :current-q-a="currentQA"
                 :index="currentQuestionIndex"
@@ -63,7 +68,8 @@
                 @ask-ai="askAnalysisAI"
                 @submit-answer="submitAnalysisAnswer"
             />
-        </div>
+            </div>
+        </template>
     </div>
 </template>
 
@@ -83,7 +89,6 @@ import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
 import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
 import SqlAnalysisPanel from '~/components/sql/SqlAnalysisPanel.vue';
 import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
-import SqlQuestionGenerator from '~/components/sql/SqlQuestionGenerator.vue';
 
 // ===== Composables =====
 const route = useRoute();
@@ -116,8 +121,14 @@ const {
   checkAnswer: checkAnswerComposable
 } = useSqlExecution();
 
-// ===== Question Generator State =====
-const showQuestionGenerator = ref(false);
+// ===== Loading State =====
+const isPageLoading = ref(true);
+const loadingStates = {
+    questions: ref(false),
+    databases: ref(false),
+    userProgress: ref(false),
+    tablesCreated: ref(false)
+};
 
 // ===== Computed Properties =====
 const currentQuestionAnswered = computed(() => {
@@ -284,37 +295,8 @@ async function callOpenAI(prompt: string, userPrompt: string) {
 }
 
 // ===== Question Generator Functions =====
-function toggleQuestionGenerator() {
-    showQuestionGenerator.value = !showQuestionGenerator.value;
-}
-
-function handleGeneratedQuestion(generatedQuestion: any) {
-    // Add the generated question as a temporary question
-    currentQA.value = {
-        question: generatedQuestion.question,
-        answer: generatedQuestion.answer || '',
-        analysisCode: generatedQuestion.analysisCode || '',
-        type: generatedQuestion.type || 'execution',
-        dbNames: generatedQuestion.DbName ? generatedQuestion.DbName.split(',') : ['users'],
-        dbs: generatedQuestion.DbName ? generatedQuestion.DbName.split(',').map(getDatabaseByName).filter(Boolean) : [getDatabaseByName('users')].filter(Boolean),
-        genre: Array.isArray(generatedQuestion.genre) ? generatedQuestion.genre : [generatedQuestion.genre],
-        showRecordsSql: generatedQuestion.showRecordsSql || '',
-        subgenre: Array.isArray(generatedQuestion.subgenre) ? generatedQuestion.subgenre : (generatedQuestion.subgenre ? [generatedQuestion.subgenre] : []),
-        generated: true
-    };
-    
-    // Reset states
-    resetSqlAndAi();
-    isCorrect.value = null;
-    
-    // Hide the generator
-    showQuestionGenerator.value = false;
-    
-    // Set up database tables for the generated question
-    if (currentQA.value.dbs.length > 0) {
-        createUserCopyTables(currentQA.value.dbs);
-        createAnswerCopyTables(currentQA.value.dbs);
-    }
+function navigateToGenerator() {
+    navigateTo('/sql/generator');
 }
 
 // ===== Navigation Functions =====
@@ -341,33 +323,68 @@ function nextQuestion() {
     }
 }
 
+// ===== Helper Functions =====
+function checkAllLoaded() {
+    const allLoaded = loadingStates.questions.value && 
+                      loadingStates.databases.value && 
+                      loadingStates.userProgress.value &&
+                      loadingStates.tablesCreated.value;
+    
+    if (allLoaded) {
+        isPageLoading.value = false;
+    }
+}
+
 // ===== Lifecycle =====
 watch([questions, index], async () => {
-    setCurrentQA();
-    resetSqlAndAi();
-    if (currentQA.value.dbs.length > 0) {
-        await createUserCopyTables(currentQA.value.dbs);
-        await createAnswerCopyTables(currentQA.value.dbs);
+    if (!isPageLoading.value) {
+        setCurrentQA();
+        resetSqlAndAi();
+        if (currentQA.value.dbs.length > 0) {
+            await createUserCopyTables(currentQA.value.dbs);
+            await createAnswerCopyTables(currentQA.value.dbs);
+        }
     }
 });
 
 onMounted(async () => {
-    await loadQuestions();
-    await loadDatabases();
-    
-    // Initialize user progress if logged in
-    if (isLoggedIn.value) {
-        try {
-            await loadProgressFromServer();
-        } catch (error) {
-            console.warn('Failed to load progress in SQL page:', error);
+    try {
+        // Load questions
+        await loadQuestions();
+        loadingStates.questions.value = true;
+        
+        // Load databases  
+        await loadDatabases();
+        loadingStates.databases.value = true;
+        
+        // Initialize user progress if logged in
+        if (isLoggedIn.value) {
+            try {
+                await loadProgressFromServer();
+            } catch (error) {
+                console.warn('Failed to load progress in SQL page:', error);
+            }
         }
+        loadingStates.userProgress.value = true;
+        
+        // Set up the question
+        setRouteParams();
+        setCurrentQA();
+        
+        // Create tables
+        if (currentQA.value.dbs.length > 0) {
+            await createUserCopyTables(currentQA.value.dbs);
+            await createAnswerCopyTables(currentQA.value.dbs);
+        }
+        loadingStates.tablesCreated.value = true;
+        
+        // Check if all loading is complete
+        checkAllLoaded();
+    } catch (error) {
+        console.error('Error during page initialization:', error);
+        // Still mark as loaded to prevent infinite loading
+        isPageLoading.value = false;
     }
-    
-    setRouteParams();
-    setCurrentQA();
-    await createUserCopyTables(currentQA.value.dbs);
-    await createAnswerCopyTables(currentQA.value.dbs);
 });
 </script>
 
