@@ -2,6 +2,22 @@
 import { createClient, type Client } from '@libsql/client';
 import { DatabaseAdapter, UserData, UserProgressData } from './database-interface';
 
+/**
+ * Turso (libSQL) データベースアダプター
+ * 
+ * Tursoはサーバーレス対応のSQLite互換データベースで、Vercelデプロイメントに最適化されています。
+ * libSQL TypeScript SDKを使用してクラウドホストされたデータベースとの通信を行います。
+ * 
+ * 特徴:
+ * - SQLite互換のクエリ構文
+ * - エッジロケーションでの高速アクセス
+ * - 自動スケーリングとバックアップ
+ * - HTTP/WebSocket接続によるサーバーレス対応
+ * 
+ * @see https://docs.turso.tech/sdk/ts/quickstart - Turso SDK クイックスタート
+ * @see https://docs.turso.tech/sdk/ts/reference - Turso SDK リファレンス
+ * @see DOCS/TURSO_SDK.md - 本プロジェクトでの詳細な使用方法
+ */
 export class TursoAdapter implements DatabaseAdapter {
   private client: Client;
   private initPromise: Promise<void>;
@@ -18,9 +34,11 @@ export class TursoAdapter implements DatabaseAdapter {
 
     console.log(`Initializing Turso database connection to: ${url}`);
     
+    // libSQL クライアントを初期化
+    // createClient() は Turso SDK の主要な初期化関数
     this.client = createClient({
-      url,
-      authToken,
+      url,        // libsql://your-database.turso.io 形式のURL
+      authToken,  // Tursoダッシュボードから取得した認証トークン
     });
 
     this.initPromise = this.initTables();
@@ -226,8 +244,21 @@ export class TursoAdapter implements DatabaseAdapter {
   }
 
   // Progress operations
+  /**
+   * ユーザーの学習進捗をTursoデータベースに保存
+   * 
+   * Turso SDK の execute() メソッドを使用してINSERT OR REPLACEクエリを実行
+   * パラメータ化クエリ（?プレースホルダー）でSQLインジェクション対策を実装
+   * 
+   * @param userId - ユーザーID
+   * @param questionId - 問題ID 
+   * @param genre - 問題ジャンル（オプション）
+   * @param subgenre - 問題サブジャンル（オプション）
+   * @param level - 問題レベル（オプション）
+   */
   async saveProgress(userId: number, questionId: number, genre?: string, subgenre?: string, level?: number): Promise<void> {
     await this.ensureInitialized();
+    // Turso SDK execute() メソッド: パラメータ化クエリでデータベース操作
     await this.client.execute({
       sql: `INSERT OR REPLACE INTO user_progress 
             (user_id, question_id, answered_at, genre, subgenre, level)
@@ -236,13 +267,24 @@ export class TursoAdapter implements DatabaseAdapter {
     });
   }
 
+  /**
+   * 指定ユーザーの学習進捗を取得
+   * 
+   * Turso SDK の execute() で SELECT クエリを実行し、result.rows で結果を取得
+   * SQLite互換の結果セット処理でデータを TypeScript オブジェクトに変換
+   * 
+   * @param userId - ユーザーID
+   * @returns ユーザーの進捗データ配列
+   */
   async getUserProgress(userId: number): Promise<UserProgressData[]> {
     await this.ensureInitialized();
+    // Turso SDK でSELECTクエリを実行
     const result = await this.client.execute({
       sql: 'SELECT * FROM user_progress WHERE user_id = ? ORDER BY answered_at DESC',
       args: [userId]
     });
     
+    // result.rows から結果セットを取得してTypeScriptオブジェクトに変換
     return result.rows.map(row => ({
       id: Number(row.id),
       user_id: Number(row.user_id),
