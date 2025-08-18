@@ -43,7 +43,9 @@ export function useAI() {
 
         try {
             // OpenAI クライアントを初期化
-            const client = new OpenAI();
+            const client = new OpenAI({
+                apiKey: config.openaiApiKey
+            });
             
             // Response API を呼び出し - Chat Completion APIとは異なる構造
             const response: any = await client.responses.create({

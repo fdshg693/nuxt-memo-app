@@ -3,9 +3,9 @@ import { useSqlExplanationLinks } from '~/composables/useSqlExplanationLinks'
 import { useAI } from '~/composables/useAI'
 
 /**
- * OpenAI Response API を使用したSQL学習支援エンドポイント
+ * OpenAI Chat Completion API を使用したSQL学習支援エンドポイント
  * 
- * このエンドポイントはOpenAI Response APIを使用してSQL関連の質問に回答します。
+ * このエンドポイントはOpenAI Chat Completion APIを使用してSQL関連の質問に回答します。
  * プロンプトインジェクション対策とSQL専門教師としての制約を実装しています。
  * 
  * @route POST /api/openai
@@ -15,7 +15,7 @@ import { useAI } from '~/composables/useAI'
  * @body {string} userPrompt - ユーザー入力プロンプト（オプション）
  * @returns {string|Object} AI応答テキストまたはエラーオブジェクト
  * 
- * @see DOCS/OPENAI_RESPONSE_API.md - Response API の詳細説明
+ * @see DOCS/OPENAI_CHAT_API.md - Chat Completion API の詳細説明
  */
 export default defineEventHandler(async (event) => {
 
@@ -44,8 +44,8 @@ export default defineEventHandler(async (event) => {
             userPrompt || ''
         )
 
-        // OpenAI Response API用のシステムプロンプト
-        // instructionsパラメータとしてSQL専門教師の役割を定義
+        // OpenAI Chat Completion API用のシステムプロンプト
+        // システムメッセージとしてSQL専門教師の役割を定義
         const systemPrompt = `あなたはSQL専門の教師です。
 SQLに関する質問にのみ回答してください。
 SQL以外の質問（プログラミング一般、数学、雑談など）には「SQLに関する質問のみお答えできます」と回答してください。
@@ -58,8 +58,8 @@ SQL以外の質問（プログラミング一般、数学、雑談など）に�
             } ${userPrompt ? `ユーザープロンプト: "${userPrompt}"` : 'ユーザープロンプトが提供されていません。'
             }`
 
-        // OpenAI Response API を呼び出し（モック対応付き）
-        // useAI composable を通じて client.responses.create() が実行される
+        // OpenAI Chat Completion API を呼び出し（モック対応付き）
+        // useAI composable を通じて client.chat.completions.create() が実行される
         const aiResponse = await callOpenAIWithMock(systemPrompt, prompt, mockResponse, 2000)
         
         // Add explanation links to the response

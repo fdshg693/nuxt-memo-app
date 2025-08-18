@@ -8,6 +8,19 @@
           ✓ 正解済み
         </div>
       </div>
+      
+      <!-- Explanation Button -->
+      <div class="flex gap-2 mb-2">
+        <button
+          @click="showExplanation"
+          class="px-3 py-1 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition shadow"
+        >
+          📚 解説を見る
+        </button>
+        <span v-if="currentQA.genre && currentQA.genre.length > 0" class="text-xs text-gray-500 self-center">
+          {{ Array.isArray(currentQA.genre) ? currentQA.genre.join(', ') : currentQA.genre }}
+        </span>
+      </div>
     </div>
 
     <!-- Question navigation -->
@@ -43,17 +56,29 @@ interface Table {
 interface QuestionAnswer {
   question: string;
   dbs: Table[];
+  genre?: string | string[];
 }
 
-defineProps<{
+const props = defineProps<{
   currentQA: QuestionAnswer;
   index: number;
   questionsLength: number;
   alreadyAnswered?: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   prev: [];
   next: [];
+  'show-explanation': [genre: string];
 }>();
+
+function showExplanation() {
+  const genre = Array.isArray(props.currentQA.genre) 
+    ? props.currentQA.genre[0] 
+    : props.currentQA.genre;
+  
+  if (genre) {
+    emit('show-explanation', genre);
+  }
+}
 </script>
