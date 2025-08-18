@@ -6,7 +6,7 @@ import OpenAI from "openai";
 export function useAI() {
     
     /**
-     * Make a call to OpenAI API with the correct chat completion format
+     * Make a call to OpenAI API with the original gpt-5 format
      * @param systemPrompt - System instructions for AI
      * @param userPrompt - User input prompt
      * @param maxTokens - Maximum tokens for response
@@ -20,21 +20,15 @@ export function useAI() {
         }
 
         try {
-            const client = new OpenAI({
-                apiKey: config.openaiApiKey
-            });
-            
-            const response = await client.chat.completions.create({
-                model: 'gpt-4o',
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: userPrompt }
-                ],
-                max_tokens: maxTokens,
-                temperature: 0.7
+            const client = new OpenAI();
+            const response: any = await client.responses.create({
+                model: 'gpt-5',
+                instructions: systemPrompt,
+                input: userPrompt,
+                max_output_tokens: maxTokens
             });
 
-            return response.choices[0]?.message?.content || 'AIからの応答を取得できませんでした。';
+            return response.output_text || 'AIからの応答を取得できませんでした。';
         } catch (error) {
             console.error('Error calling OpenAI API:', error);
             throw error;

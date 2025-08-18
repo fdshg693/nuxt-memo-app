@@ -1,0 +1,33 @@
+[
+    {
+        "title": "トランザクション (TRANSACTION) の詳細解説",
+        "description": "トランザクションは、データベースの一貫性を保つためのACID特性（原子性、一貫性、分離性、持続性）を持つ処理単位です。適切な分離レベルとロック戦略により、並行性と一貫性のバランスを取ります。",
+        "examples": [
+            {
+                "example": "-- 基本的なトランザクション\nBEGIN TRANSACTION;\nUPDATE products SET stock = stock - 1 WHERE id = 100;\nINSERT INTO orders (user_id, product_id, quantity) VALUES (1, 100, 1);\nCOMMIT;",
+                "explanation": "関連する複数の操作を1つのトランザクションにまとめることで、全ての処理が成功するか、全て失敗するかのいずれかを保証します。",
+                "DbName": "products"
+            },
+            {
+                "example": "-- エラーハンドリング\nBEGIN TRANSACTION;\nTRY\n    UPDATE accounts SET balance = balance - 1000 WHERE id = 1;\n    UPDATE accounts SET balance = balance + 1000 WHERE id = 2;\n    COMMIT;\nCATCH\n    ROLLBACK;\nEND;",
+                "explanation": "エラーが発生した場合はROLLBACKによりデータベースを元の状態に戻し、データの整合性を保ちます。",
+                "DbName": "users"
+            },
+            {
+                "example": "-- 分離レベルの設定\nSET TRANSACTION ISOLATION LEVEL READ COMMITTED;\nBEGIN TRANSACTION;\nSELECT COUNT(*) FROM orders WHERE total_amount > 1000;\nCOMMIT;",
+                "explanation": "READ COMMITTEDレベルでは、コミット済みデータのみ読み取り、ダーティリードを防ぎます。",
+                "DbName": "orders"
+            },
+            {
+                "example": "-- SERIALIZABLE分離レベル\nSET TRANSACTION ISOLATION LEVEL SERIALIZABLE;\nBEGIN TRANSACTION;\nSELECT AVG(price) FROM products WHERE category = 'electronics';\nINSERT INTO products (name, price, category) VALUES ('New Item', 500, 'electronics');\nCOMMIT;",
+                "explanation": "SERIALIZABLEレベルでは最も厳格な分離を提供し、ファントムリードも防ぎますが、性能への影響があります。",
+                "DbName": "products"
+            },
+            {
+                "example": "-- 楽観的ロック\nSELECT id, name, version FROM users WHERE id = 1;\n-- アプリケーション処理後\nUPDATE users SET name = 'Updated', version = version + 1 \nWHERE id = 1 AND version = 前回取得したversion;",
+                "explanation": "楽観的ロックではバージョン管理により、更新時にデータが他のトランザクションで変更されていないことを確認します。",
+                "DbName": "users"
+            }
+        ]
+    }
+]
