@@ -35,6 +35,7 @@
                 :already-answered="currentQuestionAnswered"
                 @prev="prevQuestion"
                 @next="nextQuestion"
+                @show-explanation="openExplanationModal"
             />
 
             <!-- AI Assistant -->
@@ -70,6 +71,13 @@
             />
             </div>
         </template>
+        
+        <!-- Explanation Modal -->
+        <SqlExplanationModal 
+            :is-visible="showExplanationModal"
+            :genre="explanationGenre"
+            @close="closeExplanationModal"
+        />
     </div>
 </template>
 
@@ -89,6 +97,7 @@ import SqlQuestionContent from '~/components/sql/SqlQuestionContent.vue';
 import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
 import SqlAnalysisPanel from '~/components/sql/SqlAnalysisPanel.vue';
 import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
+import SqlExplanationModal from '~/components/sql/SqlExplanationModal.vue';
 
 // ===== Composables =====
 const route = useRoute();
@@ -129,6 +138,10 @@ const loadingStates = {
     userProgress: ref(false),
     tablesCreated: ref(false)
 };
+
+// ===== Explanation Modal State =====
+const showExplanationModal = ref(false);
+const explanationGenre = ref('');
 
 // ===== Computed Properties =====
 const currentQuestionAnswered = computed(() => {
@@ -321,6 +334,17 @@ function nextQuestion() {
         const nextId = availableIds[currentIdx + 1];
         navigateTo(`/sql/${nextId}`);
     }
+}
+
+// ===== Explanation Modal Functions =====
+function openExplanationModal(genre: string) {
+    explanationGenre.value = genre;
+    showExplanationModal.value = true;
+}
+
+function closeExplanationModal() {
+    showExplanationModal.value = false;
+    explanationGenre.value = '';
 }
 
 // ===== Helper Functions =====
