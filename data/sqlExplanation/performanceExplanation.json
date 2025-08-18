@@ -1,0 +1,33 @@
+[
+    {
+        "title": "パフォーマンス (PERFORMANCE) の詳細解説",
+        "description": "SQLクエリのパフォーマンス最適化は、インデックスの適切な使用、効率的なクエリ構造、実行計画の理解が重要です。大量データを扱う際の応答時間とスループットの向上に焦点を当てます。",
+        "examples": [
+            {
+                "example": "-- インデックスの活用\nCREATE INDEX idx_users_age ON users(age);\nSELECT * FROM users WHERE age > 25;",
+                "explanation": "WHERE句で使用される列にインデックスを作成することで、フルテーブルスキャンを回避し検索速度を大幅に向上させます。",
+                "DbName": "users"
+            },
+            {
+                "example": "-- 複合インデックスの最適化\nCREATE INDEX idx_users_age_name ON users(age, name);\nSELECT name FROM users WHERE age = 30 ORDER BY name;",
+                "explanation": "複数列を組み合わせたインデックスにより、WHERE句とORDER BY句の両方を効率化できます。",
+                "DbName": "users"
+            },
+            {
+                "example": "-- JOINの最適化\nSELECT u.name, COUNT(o.id) \nFROM users u \nINNER JOIN orders o ON u.id = o.user_id \nWHERE u.age > 25 \nGROUP BY u.id, u.name;",
+                "explanation": "JOINする前にWHERE句でデータを絞り込むことで、処理するレコード数を削減できます。",
+                "DbName": "users"
+            },
+            {
+                "example": "-- N+1問題の解決\nSELECT o.*, p.product_name, u.name \nFROM orders o \nJOIN products p ON o.product_id = p.id \nJOIN users u ON o.user_id = u.id \nWHERE o.user_id = 1;",
+                "explanation": "複数回のクエリを1つのJOINクエリにまとめることで、N+1問題を解決し大幅な性能向上を実現できます。",
+                "DbName": "orders"
+            },
+            {
+                "example": "-- LIKE句の最適化\nSELECT * FROM users WHERE name LIKE '田中%';\n-- 避けるべき: SELECT * FROM users WHERE name LIKE '%田中%';",
+                "explanation": "前方一致検索（文字列の先頭に%がない）はインデックスを活用できますが、部分一致検索は全行スキャンになります。",
+                "DbName": "users"
+            }
+        ]
+    }
+]

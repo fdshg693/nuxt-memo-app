@@ -74,6 +74,7 @@
         "subgenre": "WHERE",
         "question": "商品『Scanner』の在庫数を5に更新する",
         "answer": "UPDATE products SET stock = 5 WHERE product_name = 'Scanner'",
+        "showRecordsSql": "SELECT * FROM products",
         "DbName": "products"
     },
     {
@@ -83,6 +84,7 @@
         "subgenre": "WHERE",
         "question": "年齢が30歳のユーザーを削除する",
         "answer": "DELETE FROM users WHERE age = 30",
+        "showRecordsSql": "SELECT * FROM users",
         "DbName": "users"
     },
     {
@@ -109,6 +111,7 @@
         "subgenre": "WHERE",
         "question": "『Frank』という名前の顧客の年齢を32に更新する",
         "answer": "UPDATE customers SET age = 32 WHERE name = 'Frank'",
+        "showRecordsSql": "SELECT * FROM customers",
         "DbName": "customers"
     },
     {
