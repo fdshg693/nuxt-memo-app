@@ -146,14 +146,17 @@ async function loadExplanation(genre: string) {
     }
     
     // Load explanation data
-    const data = await $fetch(`/data/sqlExplanation/${fileName}.json`);
-    if (data && data.length > 0) {
-      explanationData.value = data[0];
-    } else {
+    const data = await $fetch('/api/explanation', {
+      params: { genre }
+    });
+    
+    if (data.error) {
       explanationData.value = {
-        title: `${genre} の解説`,
-        description: '解説データの読み込みに失敗しました。'
+        title: data.title || `${genre} の解説`,
+        description: data.description || '解説の読み込みに失敗しました。'
       };
+    } else {
+      explanationData.value = data;
     }
   } catch (error) {
     console.error('Error loading explanation:', error);

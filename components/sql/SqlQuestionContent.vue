@@ -59,19 +59,6 @@ interface QuestionAnswer {
   genre?: string | string[];
 }
 
-defineProps<{
-  currentQA: QuestionAnswer;
-  index: number;
-  questionsLength: number;
-  alreadyAnswered?: boolean;
-}>();
-
-const emit = defineEmits<{
-  prev: [];
-  next: [];
-  'show-explanation': [genre: string];
-}>();
-
 const props = defineProps<{
   currentQA: QuestionAnswer;
   index: number;
@@ -79,7 +66,7 @@ const props = defineProps<{
   alreadyAnswered?: boolean;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   prev: [];
   next: [];
   'show-explanation': [genre: string];
