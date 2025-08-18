@@ -94,11 +94,16 @@ interface ExplanationData {
   title: string;
   description: string;
   examples?: ExplanationExample[];
+  questionId?: number;
+  genre?: string;
+  answer?: string;
+  hasCustomExplanation?: boolean;
 }
 
 const props = defineProps<{
   isVisible: boolean;
   genre?: string;
+  questionId?: number;
 }>();
 
 const emit = defineEmits<{
@@ -112,56 +117,42 @@ function closeModal() {
   emit('close');
 }
 
-async function loadExplanation(genre: string) {
-  if (!genre) return;
+async function loadExplanation(questionId?: number, genre?: string) {
+  if (!questionId && !genre) return;
   
   isLoading.value = true;
   explanationData.value = null;
   
   try {
-    // Map genre to explanation file name
-    const explanationFileMap: Record<string, string> = {
-      'PERFORMANCE': 'performanceExplanation',
-      'TRANSACTION': 'transactionExplanation', 
-      'DEADLOCK': 'deadlockExplanation',
-      'SELECT': 'selectExplanation',
-      'INSERT': 'insertExplanation',
-      'UPDATE': 'updateExplanation',
-      'DELETE': 'deleteExplanation',
-      'JOIN': 'joinExplanation',
-      'WHERE': 'whereExplanation',
-      'GROUP_BY': 'groupbyExplanation',
-      'ORDER_BY': 'orderbyExplanation',
-      'COUNT': 'countExplanation',
-      'SUM': 'sumExplanation'
-    };
-    
-    const fileName = explanationFileMap[genre.toUpperCase()];
-    if (!fileName) {
-      explanationData.value = {
-        title: `${genre} の解説`,
-        description: 'この内容の詳細解説は準備中です。'
-      };
-      return;
+    // First, try to load question-specific explanation if questionId is provided
+    if (questionId) {
+      const questionData = await $fetch('/api/question-explanation', {
+        params: { questionId }
+      });
+      
+      if (!questionData.error && questionData.hasCustomExplanation) {
+        explanationData.value = questionData;
+        return;
+      } else if (!questionData.error && !questionData.hasCustomExplanation) {
+        // Question exists but no custom explanation, show notice and fall back to genre explanation
+        if (genre) {
+          await loadGenreExplanation(genre, questionId);
+          return;
+        } else {
+          explanationData.value = questionData;
+          return;
+        }
+      }
     }
     
-    // Load explanation data
-    const data = await $fetch('/api/explanation', {
-      params: { genre }
-    });
-    
-    if (data.error) {
-      explanationData.value = {
-        title: data.title || `${genre} の解説`,
-        description: data.description || '解説の読み込みに失敗しました。'
-      };
-    } else {
-      explanationData.value = data;
+    // Fall back to genre explanation
+    if (genre) {
+      await loadGenreExplanation(genre, questionId);
     }
   } catch (error) {
     console.error('Error loading explanation:', error);
     explanationData.value = {
-      title: `${genre} の解説`,
+      title: questionId ? `問題 ${questionId} の解説` : `${genre} の解説`,
       description: '解説の読み込み中にエラーが発生しました。'
     };
   } finally {
@@ -169,10 +160,61 @@ async function loadExplanation(genre: string) {
   }
 }
 
-// Watch for genre changes when modal is opened
-watch([() => props.isVisible, () => props.genre], ([visible, genre]) => {
-  if (visible && genre) {
-    loadExplanation(genre);
+async function loadGenreExplanation(genre: string, questionId?: number) {
+  // Map genre to explanation file name
+  const explanationFileMap: Record<string, string> = {
+    'PERFORMANCE': 'performanceExplanation',
+    'TRANSACTION': 'transactionExplanation', 
+    'DEADLOCK': 'deadlockExplanation',
+    'SELECT': 'selectExplanation',
+    'INSERT': 'insertExplanation',
+    'UPDATE': 'updateExplanation',
+    'DELETE': 'deleteExplanation',
+    'JOIN': 'joinExplanation',
+    'WHERE': 'whereExplanation',
+    'GROUP_BY': 'groupbyExplanation',
+    'ORDER_BY': 'orderbyExplanation',
+    'COUNT': 'countExplanation',
+    'SUM': 'sumExplanation'
+  };
+  
+  const fileName = explanationFileMap[genre.toUpperCase()];
+  if (!fileName) {
+    explanationData.value = {
+      title: questionId ? `問題 ${questionId}: ${genre} の解説` : `${genre} の解説`,
+      description: 'この内容の詳細解説は準備中です。'
+    };
+    return;
+  }
+  
+  // Load explanation data
+  const data = await $fetch('/api/explanation', {
+    params: { genre }
+  });
+  
+  if (data.error) {
+    explanationData.value = {
+      title: data.title || (questionId ? `問題 ${questionId}: ${genre} の解説` : `${genre} の解説`),
+      description: data.description || '解説の読み込みに失敗しました。'
+    };
+  } else {
+    // Add question context to genre explanation if questionId is provided
+    if (questionId) {
+      explanationData.value = {
+        ...data,
+        title: `問題 ${questionId}: ${data.title}`,
+        description: `【問題 ${questionId} の一般的な解説】\n\n${data.description}`
+      };
+    } else {
+      explanationData.value = data;
+    }
+  }
+}
+
+// Watch for changes when modal is opened
+watch([() => props.isVisible, () => props.questionId, () => props.genre], ([visible, questionId, genre]) => {
+  if (visible && (questionId || genre)) {
+    loadExplanation(questionId, genre);
   }
 });
 </script>
