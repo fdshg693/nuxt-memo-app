@@ -3,21 +3,21 @@ import OpenAI from "openai";
 /**
  * Centralized AI service for OpenAI API calls
  * 
- * このサービスはOpenAI Chat Completion APIを使用してSQL学習支援機能を提供します。
- * Chat Completion APIは会話形式のインタラクションに最適化されたAPIです。
+ * このサービスはOpenAI Response APIを使用してSQL学習支援機能を提供します。
+ * Response APIはChat Completion APIとは異なる構造化された応答生成に特化したAPIです。
  * 
- * @see https://platform.openai.com/docs/api-reference/chat/create
- * @see DOCS/OPENAI_CHAT_API.md - 詳細な使用方法とベストプラクティス
+ * @see https://platform.openai.com/docs/api-reference/responses/create
+ * @see DOCS/OPENAI_RESPONSE_API.md - 詳細な使用方法とベストプラクティス
  */
 export function useAI() {
     
     /**
-     * OpenAI Chat Completion APIを使用してAI応答を生成
+     * OpenAI Response APIを使用してAI応答を生成
      * 
-     * Chat Completion APIの特徴:
-     * - システムメッセージとユーザーメッセージを分離した明確な構造
-     * - max_tokensによる精密な出力制御
-     * - GPT-4oなどの最新モデルに対応
+     * Response APIの特徴:
+     * - instructionsとinputを分離した明確な構造
+     * - max_output_tokensによる精密な出力制御
+     * - GPT-5などの最新モデルに対応
      * - 教育支援や一問一答形式に最適
      * 
      * @param systemPrompt - システム指示（SQL教師としての役割定義）
@@ -47,19 +47,16 @@ export function useAI() {
                 apiKey: config.openaiApiKey
             });
             
-            // Chat Completion API を呼び出し
-            const response = await client.chat.completions.create({
-                model: 'gpt-4o',                   // 使用するモデル（GPT-4o）
-                messages: [
-                    { role: 'system', content: systemPrompt },  // システム指示
-                    { role: 'user', content: userPrompt }       // ユーザー入力
-                ],
-                max_tokens: maxTokens,             // 最大出力トークン数
-                temperature: 0.7                   // 応答の創造性を制御
+            // Response API を呼び出し - Chat Completion APIとは異なる構造
+            const response: any = await client.responses.create({
+                model: 'gpt-5',                    // 使用するモデル（GPT-5を指定）
+                instructions: systemPrompt,        // システム指示（Chat CompletionのSystem message相当）
+                input: userPrompt,                 // ユーザー入力（Chat CompletionのUser message相当）
+                max_output_tokens: maxTokens       // 最大出力トークン数（Chat Completionのmax_tokensより精密）
             });
 
-            // Chat Completion APIでは choices[0].message.content から応答を取得
-            return response.choices[0]?.message?.content || 'AIからの応答を取得できませんでした。';
+            // Response APIでは output_text プロパティから応答を取得
+            return response.output_text || 'AIからの応答を取得できませんでした。';
         } catch (error) {
             console.error('Error calling OpenAI API:', error);
             throw error;
@@ -70,7 +67,7 @@ export function useAI() {
      * OpenAI APIを開発環境でのモック応答機能付きで呼び出し
      * 
      * 開発環境では実際のAPIキーが無くてもモック応答で動作確認が可能です。
-     * 本番環境では通常のChat Completion API呼び出しが実行されます。
+     * 本番環境では通常のResponse API呼び出しが実行されます。
      * 
      * @param systemPrompt - システム指示（SQL教師としての役割定義）
      * @param userPrompt - ユーザー入力（SQLに関する質問）
@@ -101,7 +98,7 @@ export function useAI() {
             return mockResponse;
         }
 
-        // APIキーが設定されている場合は実際のChat Completion APIを呼び出し
+        // APIキーが設定されている場合は実際のResponse APIを呼び出し
         return await callOpenAI(systemPrompt, userPrompt, maxTokens);
     }
 
