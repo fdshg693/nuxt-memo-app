@@ -54,6 +54,7 @@ interface Table {
 }
 
 interface QuestionAnswer {
+  id?: number;
   question: string;
   dbs: Table[];
   genre?: string | string[];

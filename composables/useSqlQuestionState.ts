@@ -7,6 +7,7 @@ interface Table {
 }
 
 interface QuestionAnswer {
+  id?: number;
   question: string;
   answer?: string;
   analysisCode?: string;

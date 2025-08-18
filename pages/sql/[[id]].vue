@@ -180,6 +180,7 @@ function setCurrentQA() {
         const questionSet = questions.value.find(q => q.id === idx);
         if (questionSet) {
             currentQA.value = {
+                id: questionSet.id,
                 question: questionSet.question,
                 answer: questionSet.answer || '',
                 analysisCode: questionSet.analysisCode || '',
