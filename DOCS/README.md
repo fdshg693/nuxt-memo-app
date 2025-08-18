@@ -7,6 +7,8 @@
 ### 🏗️ アーキテクチャ・設計
 - **[DATABASE_ABSTRACTION.md](./DATABASE_ABSTRACTION.md)** - データベース抽象化設計の説明
 - **[SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md)** - セキュア JavaScript 実行環境の実装
+- **[OPENAI_RESPONSE_API.md](./OPENAI_RESPONSE_API.md)** - OpenAI Response API の基本的な使い方と実装例
+- **[TURSO_SDK.md](./TURSO_SDK.md)** - Turso SDK (libSQL) の基本的な使い方と実装例
 
 ### 🔄 リファクタリング・改善
 - **[refactor.md](./refactor.md)** - ファイル分割・リファクタリング推奨箇所
@@ -35,7 +37,8 @@
 ## 🔍 ドキュメント検索
 
 特定の情報を探している場合:
-- **データベース関連** → `DATABASE_ABSTRACTION.md`
+- **データベース関連** → `DATABASE_ABSTRACTION.md`, `TURSO_SDK.md`
+- **AI・OpenAI関連** → `OPENAI_RESPONSE_API.md`
 - **セキュリティ関連** → `SECURITY_IMPLEMENTATION.md`
 - **コードの整理** → `refactor.md`
 - **画面・ナビゲーション** → `screen-transitions.md`
