@@ -5,7 +5,8 @@
         "genre": "SELECT",
         "question": "ユーザーの名前を取得する",
         "answer": "SELECT name FROM users",
-        "DbName": "users"
+        "DbName": "users",
+        "explanation": "この問題は基本的なSELECT文の使い方を学ぶ問題です。usersテーブルからnameカラムのみを取得しています。SELECTの後にカラム名を指定することで、必要なデータだけを効率的に取得できます。"
     },
     {
         "id": 2,
@@ -13,7 +14,8 @@
         "genre": "SELECT",
         "question": "お客さんの年齢を取得する",
         "answer": "SELECT age FROM customers",
-        "DbName": "customers"
+        "DbName": "customers",
+        "explanation": "この問題では、customersテーブルからageカラムを取得しています。テーブル名とカラム名を正確に指定することで、必要な情報を取得できます。異なるテーブル（usersとcustomers）を使い分ける練習にもなります。"
     },
     {
         "id": 3,
@@ -30,7 +32,8 @@
         "question": "以下のユーザーを追加する: (8, 'Hanna', 30)",
         "answer": "INSERT INTO users (id, name, age) VALUES (8, 'Hanna', 30)",
         "showRecordsSql": "SELECT * FROM users",
-        "DbName": "users"
+        "DbName": "users",
+        "explanation": "INSERT文を使用してusersテーブルに新しいレコードを追加する問題です。INSERT INTO文の後に挿入先のテーブル名、括弧内にカラム名を指定し、VALUESの後に実際の値を記述します。カラムの順序と値の順序は一致させる必要があります。"
     },
     {
         "id": 5,
@@ -39,7 +42,8 @@
         "subgenre": "SUM",
         "question": "注文の合計金額を取得する",
         "answer": "SELECT SUM(total_amount) FROM orders",
-        "DbName": "orders"
+        "DbName": "orders",
+        "explanation": "この問題では集計関数SUM()を使用してordersテーブルのtotal_amountカラムの合計値を計算しています。SUM()は数値データの合計を求める関数で、データベース全体の統計情報を取得する際によく使用されます。"
     },
     {
         "id": 6,

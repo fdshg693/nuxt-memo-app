@@ -76,6 +76,7 @@
         <SqlExplanationModal 
             :is-visible="showExplanationModal"
             :genre="explanationGenre"
+            :question-id="explanationQuestionId"
             @close="closeExplanationModal"
         />
     </div>
@@ -142,6 +143,7 @@ const loadingStates = {
 // ===== Explanation Modal State =====
 const showExplanationModal = ref(false);
 const explanationGenre = ref('');
+const explanationQuestionId = ref<number | undefined>(undefined);
 
 // ===== Computed Properties =====
 const currentQuestionAnswered = computed(() => {
@@ -178,6 +180,7 @@ function setCurrentQA() {
         const questionSet = questions.value.find(q => q.id === idx);
         if (questionSet) {
             currentQA.value = {
+                id: questionSet.id,
                 question: questionSet.question,
                 answer: questionSet.answer || '',
                 analysisCode: questionSet.analysisCode || '',
@@ -337,14 +340,16 @@ function nextQuestion() {
 }
 
 // ===== Explanation Modal Functions =====
-function openExplanationModal(genre: string) {
-    explanationGenre.value = genre;
+function openExplanationModal(data: { questionId?: number; genre: string }) {
+    explanationGenre.value = data.genre;
+    explanationQuestionId.value = data.questionId;
     showExplanationModal.value = true;
 }
 
 function closeExplanationModal() {
     showExplanationModal.value = false;
     explanationGenre.value = '';
+    explanationQuestionId.value = undefined;
 }
 
 // ===== Helper Functions =====

@@ -54,6 +54,7 @@ interface Table {
 }
 
 interface QuestionAnswer {
+  id?: number;
   question: string;
   dbs: Table[];
   genre?: string | string[];
@@ -69,7 +70,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   prev: [];
   next: [];
-  'show-explanation': [genre: string];
+  'show-explanation': [data: { questionId?: number; genre: string }];
 }>();
 
 function showExplanation() {
@@ -78,7 +79,10 @@ function showExplanation() {
     : props.currentQA.genre;
   
   if (genre) {
-    emit('show-explanation', genre);
+    emit('show-explanation', { 
+      questionId: props.currentQA.id,
+      genre: genre 
+    });
   }
 }
 </script>
