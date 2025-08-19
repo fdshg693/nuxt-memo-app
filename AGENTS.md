@@ -87,26 +87,74 @@ The system supports two types of SQL questions:
    - Use `SqlAnalysisPanel` component with user answer input
 
 ### AI Integration & Question Generation
-Advanced AI features powered by OpenAI API:
+Advanced AI features powered by OpenAI API with specialized services for each use case:
 
-#### AI Learning Assistant
-OpenAI API calls go through `/server/api/openai.post.ts` with built-in prompt injection protection:
-- Only SQL-related prompts are allowed
-- System prompt restricts responses to SQL education
-- **Specialized Analysis Prompts**: Different AI strategies based on question genre:
+#### AI Architecture Overview
+The AI system is now organized into specialized services for different use cases:
+
+```
+composables/ai/
+├── types.ts                       # TypeScript interfaces for AI system
+├── configs.ts                    # AI prompt configurations for each use case  
+├── base-service.ts               # Base AI service factory
+├── use-sql-quiz-assistant.ts     # SQL quiz Q&A service
+├── use-sql-analysis-assistant.ts # SQL analysis service (PERFORMANCE/TRANSACTION/DEADLOCK)
+├── use-sql-question-generator.ts # SQL question generation service
+└── index.ts                      # Exports all AI services
+```
+
+#### Specialized AI Services
+
+**1. SQL Quiz Assistant** (`useSqlQuizAssistant`)
+- Used in `pages/sql/[[id]].vue` for general SQL learning questions
+- Context-aware prompt building with database information
+- Validates SQL-related prompts with built-in security
+
+**2. SQL Analysis Assistant** (`useSqlAnalysisAssistant`)
+- Genre-specific analysis for PERFORMANCE, TRANSACTION, DEADLOCK
+- Each genre has specialized system prompts:
   - `PERFORMANCE`: Focus on execution plans, indexing, scalability
   - `TRANSACTION`: Cover isolation levels, concurrency control, ACID properties
   - `DEADLOCK`: Examine resource ordering and prevention strategies
+- Intelligent service selection based on question genre
+
+**3. SQL Question Generator** (`useSqlQuestionGenerator`)
+- Used in `server/api/generate-question.post.ts` for AI-powered question creation
+- Database schema-aware generation with validation
+- Validates table existence and generates appropriate questions
+- JSON response parsing with fallback handling
+
+#### AI Learning Assistant Configuration
+All AI services go through centralized prompt configurations with built-in security:
+- Only SQL-related prompts are allowed
+- System prompts restrict responses to SQL education context
+- Prompt injection protection across all services
 - Configure `OPENAI_API_KEY` in runtime config
 
-#### AI Question Generation
-```typescript
-// useAI.ts - Centralized AI service with GPT-5 support
-const { callOpenAI, callOpenAIWithMock } = useAI();
+#### Usage Examples
 
-// server/api/generate-question.post.ts - AI-powered question generation
-// Validates database schemas before generation
-// Generates educational content with appropriate difficulty levels
+```typescript
+// SQL Quiz Questions
+const { askSqlQuestion } = useSqlQuizAssistant()
+const response = await askSqlQuestion(
+  'このクエリは正しいですか？',
+  'SELECT * FROM users',
+  '問題文',
+  'データベース情報'
+)
+
+// SQL Analysis
+const { analyzeSql } = useSqlAnalysisAssistant()
+const analysis = await analyzeSql(
+  'パフォーマンスを分析してください',
+  'PERFORMANCE',
+  'SELECT * FROM users WHERE name LIKE "%john%"',
+  'パフォーマンス問題の特定'
+)
+
+// Question Generation
+const { generateQuestion } = useSqlQuestionGenerator()
+const question = await generateQuestion('SELECT', 2, 'users')
 ```
 
 ### Subscription & Payment System
@@ -324,7 +372,10 @@ CREATE TABLE subscriptions (
 - `useSqlDb()`: Database schema access via `getDatabaseByName()`
 - `useAuth()`: Complete authentication system with server session management
 - `useUserProgress()`: Server-synchronized progress tracking with local storage fallback
-- `useAI()`: Centralized AI service with mock fallback
+- `useAI()`: Base AI service for OpenAI API integration
+- `useSqlQuizAssistant()`: Specialized AI service for SQL quiz questions
+- `useSqlAnalysisAssistant()`: Specialized AI service for SQL analysis (PERFORMANCE/TRANSACTION/DEADLOCK)
+- `useSqlQuestionGenerator()`: Specialized AI service for question generation
 - `useSecureJavaScriptExecution()`: Safe code execution with security controls
 - `useDatabaseValidation()`: Schema validation for AI question generation
 
@@ -347,8 +398,17 @@ CREATE TABLE subscriptions (
 #### AI-Generated Questions
 1. Use admin dashboard to access question generation
 2. Specify genre, level, and target database
-3. AI validates against actual database schemas
+3. AI validates against actual database schemas using `useSqlQuestionGenerator` service
 4. Generated questions require admin review before publishing
+
+#### AI Services Development
+1. Use specialized AI services for different contexts:
+   - `useSqlQuizAssistant` for general SQL questions
+   - `useSqlAnalysisAssistant` for performance/transaction/deadlock analysis
+   - `useSqlQuestionGenerator` for creating new questions
+2. Each service has dedicated prompt configurations in `composables/ai/configs.ts`
+3. Centralized validation and error handling
+4. Mock response support for development without API keys
 
 ### Testing Authentication Features
 - Test user registration at `/register`

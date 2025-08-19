@@ -99,6 +99,12 @@ import SqlExecutionPanel from '~/components/sql/SqlExecutionPanel.vue';
 import SqlAnalysisPanel from '~/components/sql/SqlAnalysisPanel.vue';
 import SqlAiAssistant from '~/components/sql/SqlAiAssistant.vue';
 import SqlExplanationModal from '~/components/sql/SqlExplanationModal.vue';
+import { useSqlQuizAssistant } from '~/composables/ai/use-sql-quiz-assistant'
+import { useSqlAnalysisAssistant } from '~/composables/ai/use-sql-analysis-assistant'
+
+// ===== AI Services =====
+const { askSqlQuestion } = useSqlQuizAssistant()
+const { analyzeSql } = useSqlAnalysisAssistant()
 
 // ===== Composables =====
 const route = useRoute();
@@ -230,12 +236,39 @@ async function askAI(userPrompt: string) {
     isAiLoading.value = true;
     aiErrorDisplay.value = null;
     aiAnswer.value = '';
-    let databasesInfo = currentQA.value.dbs.map(db => {
-        const rows = db.rows.map((row: any) => JSON.stringify(row)).join('\n');
-        return `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n${rows}`;
-    }).join('\n');
-    const prompt = `\nあなたはSQL教師です。\nSQLクエリと問題文が与えられます。\nあなたの役割は、SQLに関するユーザの質問に答えることです。\n-----------------            \n問題文: ${currentQA.value.question}\n正しいSQLクエリ: ${currentQA.value.answer}\nデータベースの情報:\n${databasesInfo}\nユーザの質問: ${userPrompt}\nユーザの入力したSQLクエリ: ${sql.value}\n-----------------\n`;
-    await callOpenAI(prompt, userPrompt);
+    
+    try {
+        // Build database information for context
+        let databasesInfo = currentQA.value.dbs.map(db => {
+            const rows = db.rows.map((row: any) => JSON.stringify(row)).join('\n');
+            return `テーブル名: ${db.name}\nカラム: ${db.columns.join(', ')}\nデータ:\n${rows}`;
+        }).join('\n');
+        
+        // Create a comprehensive prompt with context information
+        const contextualPrompt = `問題文: ${currentQA.value.question}
+正しいSQLクエリ: ${currentQA.value.answer}
+ユーザの入力したSQLクエリ: ${sql.value}
+ユーザの質問: ${userPrompt}`;
+
+        // Use the specialized SQL quiz assistant
+        const response = await askSqlQuestion(
+            contextualPrompt,
+            sql.value,
+            currentQA.value.question,
+            databasesInfo
+        );
+
+        if (response.error) {
+            aiErrorDisplay.value = response.error;
+        } else {
+            aiAnswer.value = response.response;
+        }
+    } catch (error) {
+        console.error('Error calling SQL quiz assistant:', error);
+        aiErrorDisplay.value = 'AIからの応答に失敗しました。';
+    } finally {
+        isAiLoading.value = false;
+    }
 }
 
 function submitAnalysisAnswer(userAnswer: string) {
@@ -263,52 +296,30 @@ async function askAnalysisAI(userPrompt: string) {
     aiErrorDisplay.value = null;
     aiAnswer.value = '';
     
-    const genre = currentQA.value.genre[0] || '';
-    let prompt = '';
-    
-    if (genre === 'PERFORMANCE') {
-        prompt = `\nあなたはSQLパフォーマンス専門家です。\n以下のSQLクエリのパフォーマンスを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. クエリの実行計画の予測\n2. インデックスの活用状況\n3. パフォーマンス問題の特定\n4. 改善案の提案\n5. スケーラビリティの考慮事項\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
-    } else if (genre === 'TRANSACTION') {
-        prompt = `\nあなたはSQLトランザクション専門家です。\n以下のトランザクションを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. トランザクションの分離レベル\n2. 並行性制御の問題\n3. ロック戦略\n4. ACID特性の確保\n5. 潜在的な問題と解決策\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
-    } else if (genre === 'DEADLOCK') {
-        prompt = `\nあなたはSQLデッドロック専門家です。\n以下のSQLコードのデッドロック可能性を詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\n以下の観点から分析してください：\n1. デッドロック発生の可能性\n2. リソースアクセスの順序\n3. ロック競合のシナリオ\n4. デッドロック回避策\n5. 最適な実装パターン\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
-    } else {
-        prompt = `\nあなたはSQL専門家です。\n以下のSQLコードを詳しく分析してください。\n\n問題文: ${currentQA.value.question}\n分析対象SQL:\n${currentQA.value.analysisCode}\n\nユーザの質問: ${userPrompt}\n-----------------\n`;
+    try {
+        const genre = currentQA.value.genre[0] || '';
+        
+        // Use the specialized SQL analysis assistant
+        const response = await analyzeSql(
+            userPrompt,
+            genre,
+            currentQA.value.analysisCode,
+            currentQA.value.question
+        );
+
+        if (response.error) {
+            aiErrorDisplay.value = response.error;
+        } else {
+            aiAnswer.value = response.response;
+        }
+    } catch (error) {
+        console.error('Error calling SQL analysis assistant:', error);
+        aiErrorDisplay.value = 'AIからの応答に失敗しました。';
+    } finally {
+        isAiLoading.value = false;
     }
-    
-    await callOpenAI(prompt, userPrompt);
 }
 
-async function callOpenAI(prompt: string, userPrompt: string) {
-    const { data: aiResponse, error } = await useFetch('/api/openai', {
-        method: 'POST',
-        body: { 
-            prompt,
-            sqlQuery: currentQA.value.type === 'analysis' ? currentQA.value.analysisCode : sql.value,
-            question: currentQA.value.question,
-            userPrompt
-        },
-    });
-    if (error.value) {
-        aiErrorDisplay.value = 'AIからの応答に失敗しました。';
-    } else {
-        // Handle the response properly
-        const response = aiResponse.value;
-        if (typeof response === 'string') {
-            aiAnswer.value = response;
-        } else if (response && typeof response === 'object') {
-            // Handle error objects or other non-string responses
-            if (response.error) {
-                aiErrorDisplay.value = response.error;
-            } else {
-                aiAnswer.value = JSON.stringify(response);
-            }
-        } else {
-            aiAnswer.value = 'AIからの応答に失敗しました。';
-        }
-    }
-    isAiLoading.value = false;
-}
 
 // ===== Question Generator Functions =====
 function navigateToGenerator() {
