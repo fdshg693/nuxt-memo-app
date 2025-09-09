@@ -6,8 +6,25 @@
       <span class="text-lg text-gray-800">{{ question.question }}</span>
     </div>
 
-    <div class="flex items-center gap-2 mb-2">
-      <input v-model.string="localAnswer" placeholder="答えを入力"
+    <!-- Multiple choice questions -->
+    <div v-if="question.options && question.options.length > 0" class="mb-4">
+      <div class="space-y-3">
+        <label v-for="(option, index) in question.options" :key="index" 
+          class="flex items-center space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-blue-50 cursor-pointer transition-all">
+          <input type="radio" :value="index" v-model="localAnswerIndex" 
+            class="w-4 h-4 text-blue-600 focus:ring-blue-500 focus:ring-2" />
+          <span class="text-gray-800 font-medium">{{ option }}</span>
+        </label>
+      </div>
+      <button @click="emitCheck"
+        class="mt-4 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-6 py-2 rounded-xl font-semibold shadow hover:from-blue-600 hover:to-purple-600 transition-all">
+        判定
+      </button>
+    </div>
+
+    <!-- Legacy text input for backward compatibility -->
+    <div v-else class="flex items-center gap-2 mb-2">
+      <input v-model.string="localAnswerText" placeholder="答えを入力"
         class="border border-gray-300 rounded-xl px-3 py-2 w-2/3 focus:outline-none focus:ring-2 focus:ring-blue-300 shadow-sm text-base transition-all" />
       <button @click="emitCheck"
         class="bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-2 rounded-xl font-semibold shadow hover:from-blue-600 hover:to-purple-600 transition-all">
@@ -40,23 +57,47 @@ import type { Question } from '~/composables/useQuiz'
 const props = defineProps<{
   question: Question
   questionIndex: number
-  userAnswer: string | null
+  userAnswer: string | number | null
   result: string | null
   correctNumber: number
   wrongNumber: number
 }>()
 const emit = defineEmits<{
-  (e: 'update:answer', val: string | null): void
+  (e: 'update:answer', val: string | number | null): void
   (e: 'check'): void
   (e: 'next'): void
 }>()
 
-// v-modelのローカルコピー
-const localAnswer = ref<string | null>(props.userAnswer)
+// Multiple choice answer (index)
+const localAnswerIndex = ref<number | null>(null)
+// Text answer (for backward compatibility)
+const localAnswerText = ref<string | null>(null)
+
+// Watch for changes and emit to parent
 watch(
-  () => localAnswer.value,
+  () => localAnswerIndex.value,
   (val) => {
-    emit('update:answer', val)
+    if (props.question.options) {
+      emit('update:answer', val)
+    }
+  }
+)
+
+watch(
+  () => localAnswerText.value,
+  (val) => {
+    if (!props.question.options) {
+      emit('update:answer', val)
+    }
+  }
+)
+
+// Reset answers when question changes
+watch(
+  () => props.questionIndex,
+  () => {
+    localAnswerIndex.value = null
+    localAnswerText.value = null
   }
 )
 
@@ -66,6 +107,7 @@ function emitCheck() {
 
 function emitNext() {
   emit('next')
-  localAnswer.value = null
+  localAnswerIndex.value = null
+  localAnswerText.value = null
 }
 </script>
