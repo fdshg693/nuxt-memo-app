@@ -234,5 +234,95 @@
         "analysisCode": "-- Transaction 1:\nBEGIN;\nUPDATE products SET stock = stock - 5 WHERE id = 100;\nUPDATE orders SET status = 'processing' WHERE id = 1;\nUPDATE users SET purchase_count = purchase_count + 1 WHERE id = 1;\nCOMMIT;\n\n-- Transaction 2:\nBEGIN;\nUPDATE users SET last_activity = NOW() WHERE id = 1;\nUPDATE orders SET priority = 'high' WHERE id = 1;\nUPDATE products SET view_count = view_count + 1 WHERE id = 100;\nCOMMIT;",
         "type": "analysis",
         "DbName": "products,orders,users"
+    },
+    {
+        "id": 27,
+        "level": 1,
+        "genre": "PERFORMANCE",
+        "question": "データベースのパフォーマンス向上のために最も効果的な手法はどれですか？",
+        "type": "multiple-choice",
+        "options": [
+            "適切なインデックスの作成",
+            "テーブル名を短くする", 
+            "カラム数を増やす",
+            "全てのクエリにORDER BYを追加する"
+        ],
+        "correctAnswer": 0,
+        "DbName": "users"
+    },
+    {
+        "id": 28,
+        "level": 2,
+        "genre": "PERFORMANCE",
+        "question": "次のうち、N+1問題を解決する最適な手法はどれですか？",
+        "type": "multiple-choice",
+        "options": [
+            "WHERE句にLIMITを追加する",
+            "JOINを使用して一度のクエリで関連データを取得する",
+            "インデックスを削除する",
+            "サブクエリを多用する"
+        ],
+        "correctAnswer": 1,
+        "DbName": "users,orders"
+    },
+    {
+        "id": 29,
+        "level": 1,
+        "genre": "DEADLOCK",
+        "question": "デッドロックを回避するための基本的な手法はどれですか？",
+        "type": "multiple-choice",
+        "options": [
+            "トランザクションを長時間実行する",
+            "常に同じ順序でテーブルをロックする",
+            "複数のテーブルを同時に更新する",
+            "分離レベルを最高に設定する"
+        ],
+        "correctAnswer": 1,
+        "DbName": "users,customers"
+    },
+    {
+        "id": 30,
+        "level": 2,
+        "genre": "DEADLOCK",
+        "question": "デッドロック検出後の適切な対処法はどれですか？",
+        "type": "multiple-choice",
+        "options": [
+            "システムを再起動する",
+            "全てのトランザクションを強制終了する",
+            "デッドロックが発生したトランザクションをロールバックして再実行する",
+            "データベースを初期化する"
+        ],
+        "correctAnswer": 2,
+        "DbName": "products,orders"
+    },
+    {
+        "id": 31,
+        "level": 1,
+        "genre": "TRANSACTION",
+        "question": "ACIDのDはどの特性を表しますか？",
+        "type": "multiple-choice",
+        "options": [
+            "Atomicity（原子性）",
+            "Consistency（一貫性）",
+            "Isolation（分離性）",
+            "Durability（永続性）"
+        ],
+        "correctAnswer": 3,
+        "DbName": "users"
+    },
+    {
+        "id": 32,
+        "level": 2,
+        "genre": "TRANSACTION",
+        "question": "READ COMMITTEDトランザクション分離レベルで発生する可能性がある問題はどれですか？",
+        "type": "multiple-choice",
+        "options": [
+            "ダーティリード",
+            "ファントムリード",
+            "データ損失",
+            "システムクラッシュ"
+        ],
+        "correctAnswer": 1,
+        "DbName": "orders"
     }
 ]
