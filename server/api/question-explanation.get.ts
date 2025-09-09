@@ -1,16 +1,9 @@
 import { defineEventHandler, getQuery } from 'h3'
+import questionsData from '~/data/sqlQuestions.json'
 
-// Type augmentation (local) for Vite's import.meta.glob in case global types not picked up.
-declare interface ImportMeta {
-  glob: (pattern: string, options?: { eager?: boolean; import?: string }) => Record<string, any>
-}
-
-// Eagerly import the questions JSON at build time for Vercel/serverless compatibility.
-// This removes runtime fs/path usage (process.cwd()) which can fail in edge/serverless.
-// Nuxt/Vite will include the JSON in the bundle; no dynamic I/O at runtime.
-const questionsModules = import.meta.glob('../../data/sqlQuestions.json', { eager: true, import: 'default' }) as Record<string, any>
-// There should only be one match; grab its default export (array of questions)
-const questionsData: any[] = Object.values(questionsModules)[0] || []
+// NOTE: Switched from import.meta.glob to direct static import so that
+// the bundle contains plain JSON without relying on the runtime glob shim.
+// This guarantees no globalThis._importMeta_.glob usage in serverless output.
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -22,7 +15,7 @@ export default defineEventHandler(async (event) => {
 
   try {
     // Find the question by ID from the eagerly imported data
-    const question = questionsData.find((q: any) => q.id === parseInt(questionId.toString()))
+    const question = (questionsData as any[]).find((q: any) => q.id === parseInt(questionId.toString()))
 
     if (!question) {
       return {

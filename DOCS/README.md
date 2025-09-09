@@ -13,6 +13,9 @@
 ### 🔄 リファクタリング・改善
 - **[refactor.md](./refactor.md)** - ファイル分割・リファクタリング推奨箇所
 
+### 🧩 機能ディレクトリ
+- **SQL 関連**: `/pages/sql` にある SQL 学習機能。最近追加されたランダム出題ページは `/sql/random` です。実装方針や詳細は `tmp/sql-random-plan.md` を参照してください。
+
 ### 🎨 UI・UX
 - **[screen-transitions.md](./screen-transitions.md)** - 画面遷移図と各ページの詳細
 - **[pages.md](./pages.md)** - `pages/` フォルダのルーティング規約、動的ルート、運用ルールのガイド

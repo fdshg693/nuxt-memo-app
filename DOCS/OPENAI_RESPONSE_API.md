@@ -177,8 +177,3 @@ async function callOpenAIWithMock(
 - [OpenAI Response API公式ドキュメント](https://platform.openai.com/docs/api-reference/responses/create)
 - [本プロジェクトでの実装](../composables/useAI.ts)
 - [API呼び出し例](../server/api/openai.post.ts)
-
-## 更新履歴
-
-- 2024-12: 初版作成
-- プロジェクトでのResponse API使用パターンをドキュメント化
