@@ -15,10 +15,13 @@
 
 ### 🎨 UI・UX
 - **[screen-transitions.md](./screen-transitions.md)** - 画面遷移図と各ページの詳細
+- **[pages.md](./pages.md)** - `pages/` フォルダのルーティング規約、動的ルート、運用ルールのガイド
 
 ### 🧪 テスト関連
 - **[test-development-guide.md](./test-development-guide.md)** - テストケース作成手順とベストプラクティス
-- **[playwright-test-cases.md](./playwright-test-cases.md)** - Playwright テストケース実行手順書
+
+### 📦 静的リソース / JSON 方針
+- **[IMPORT_JSON_POLICY.md](./IMPORT_JSON_POLICY.md)** - 静的 JSON を build-time にバンドルする方針（import.meta.glob 利用）と注意点
 
 ## 📍 その他の重要ドキュメント
 
@@ -43,4 +46,3 @@
 - **コードの整理** → `refactor.md`
 - **画面・ナビゲーション** → `screen-transitions.md`
 - **テスト実装** → `test-development-guide.md`
-- **テスト実行** → `playwright-test-cases.md`

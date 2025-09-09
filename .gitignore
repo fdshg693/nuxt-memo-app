@@ -29,5 +29,9 @@ playwright-report/
 playwright/.cache/
 memo.md
 
+# Copilot
 */copilot/*
 copilot
+
+# Vercel
+.vercel/

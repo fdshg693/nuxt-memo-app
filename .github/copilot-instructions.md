@@ -1,5 +1,6 @@
 ## 分割ドキュメント構成 (Modular Reference Index)
 このファイルは巨大化を避けるため、`.github/reference/` 配下にセクション別へ分割しました。詳細は各番号付きファイルを参照してください。
+また、DOCS/README.mdにも特定のトピックを探すためのガイドラインがあります。
 
 ### 目次 / Index
 1. プロジェクト概要: `./reference/01-overview.md`

@@ -64,6 +64,8 @@ export default defineNuxtConfig({
   },
   // Ensure proper static file serving for sandbox
   nitro: {
+    // Use Vercel preset to ensure build output is compatible with Vercel serverless/runtime
+    preset: 'vercel',
     publicAssets: [
       {
         baseURL: '/',

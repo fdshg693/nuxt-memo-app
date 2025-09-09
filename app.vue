@@ -10,12 +10,12 @@ import { useUserProgress } from '~/composables/useUserProgress';
 
 // Global app initialization
 const { isLoggedIn, checkAuth } = useAuth();
-const { initializeProgress, loadProgressFromServer } = useUserProgress();
+const { loadProgressFromServer } = useUserProgress();
 
 // Check authentication on app start and initialize user progress
 onMounted(async () => {
   const isAuthenticated = await checkAuth();
-  
+
   if (isAuthenticated) {
     try {
       // Load user progress from server when authenticated
