@@ -1,6 +1,19 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+
+// Local type augmentation for Vite's import.meta.glob (if global types not present)
+declare interface ImportMeta {
+  glob: (pattern: string, options?: { eager?: boolean; import?: string }) => Record<string, any>
+}
+
+// Eagerly import all explanation JSON files at build time (no runtime fs)
+const explanationModules = import.meta.glob('../../data/sqlExplanation/*Explanation.json', { eager: true, import: 'default' }) as Record<string, any>
+// Normalize to a map from filename to JSON content
+const explanationDataMap: Record<string, any> = Object.fromEntries(
+  Object.entries(explanationModules).map(([path, data]) => {
+    const fileName = path.split('/').pop() as string
+    return [fileName, data]
+  })
+)
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -14,7 +27,7 @@ export default defineEventHandler(async (event) => {
     // Map genre to explanation file name
     const explanationFileMap: Record<string, string> = {
       'PERFORMANCE': 'performanceExplanation.json',
-      'TRANSACTION': 'transactionExplanation.json', 
+      'TRANSACTION': 'transactionExplanation.json',
       'DEADLOCK': 'deadlockExplanation.json',
       'SELECT': 'selectExplanation.json',
       'INSERT': 'insertExplanation.json',
@@ -27,20 +40,18 @@ export default defineEventHandler(async (event) => {
       'COUNT': 'countExplanation.json',
       'SUM': 'sumExplanation.json'
     }
-    
+
     const fileName = explanationFileMap[genre.toString().toUpperCase()]
     if (!fileName) {
-      return { 
+      return {
         error: 'Explanation not found',
         title: `${genre} の解説`,
         description: 'この内容の詳細解説は準備中です。'
       }
     }
 
-    // Read the explanation file
-    const filePath = join(process.cwd(), 'data', 'sqlExplanation', fileName)
-    const fileContent = readFileSync(filePath, 'utf8')
-    const explanationData = JSON.parse(fileContent)
+    // Retrieve pre-imported JSON data
+    const explanationData = explanationDataMap[fileName]
 
     if (explanationData && explanationData.length > 0) {
       return explanationData[0]

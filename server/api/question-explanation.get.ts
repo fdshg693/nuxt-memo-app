@@ -1,6 +1,16 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+
+// Type augmentation (local) for Vite's import.meta.glob in case global types not picked up.
+declare interface ImportMeta {
+  glob: (pattern: string, options?: { eager?: boolean; import?: string }) => Record<string, any>
+}
+
+// Eagerly import the questions JSON at build time for Vercel/serverless compatibility.
+// This removes runtime fs/path usage (process.cwd()) which can fail in edge/serverless.
+// Nuxt/Vite will include the JSON in the bundle; no dynamic I/O at runtime.
+const questionsModules = import.meta.glob('../../data/sqlQuestions.json', { eager: true, import: 'default' }) as Record<string, any>
+// There should only be one match; grab its default export (array of questions)
+const questionsData: any[] = Object.values(questionsModules)[0] || []
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -11,16 +21,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Read the SQL questions file
-    const filePath = join(process.cwd(), 'data', 'sqlQuestions.json')
-    const fileContent = readFileSync(filePath, 'utf8')
-    const questions = JSON.parse(fileContent)
+    // Find the question by ID from the eagerly imported data
+    const question = questionsData.find((q: any) => q.id === parseInt(questionId.toString()))
 
-    // Find the question by ID
-    const question = questions.find((q: any) => q.id === parseInt(questionId.toString()))
-    
     if (!question) {
-      return { 
+      return {
         error: 'Question not found',
         title: `問題 ${questionId} の解説`,
         description: '指定された問題が見つかりません。'

@@ -1,22 +1,26 @@
 // server/utils/database.ts
 import Database from 'better-sqlite3';
 import { join } from 'path';
-import { DatabaseAdapter, UserData, UserProgressData, SessionData } from './database-interface';
+import { DatabaseAdapter, UserData, UserProgressData } from './database-interface';
 import bcrypt from 'bcrypt';
 
 class SQLiteAdapter implements DatabaseAdapter {
-  private db: Database.Database;
+  private db: any; // Using any due to minimal custom type declarations; can be refined later
 
   constructor() {
     // Create database path based on environment
     // In production/serverless, use /tmp which is writable
     // In development, use the data directory for persistence
     const isProduction = process.env.NODE_ENV === 'production';
+    // NOTE: Unlike static JSON resources now bundled via import.meta.glob elsewhere,
+    // the SQLite DB requires a writable location at runtime. On Vercel/serverless,
+    // only /tmp is writable, so we keep this dynamic path logic intentionally.
+    // In dev we use a persistent ./data directory for convenience.
     const dbDir = isProduction ? '/tmp' : join(process.cwd(), 'data');
     const dbPath = join(dbDir, 'users.db');
-    
+
     console.log(`Initializing SQLite database at: ${dbPath}`);
-    
+
     try {
       this.db = new Database(dbPath);
       this.initTables();
@@ -141,10 +145,14 @@ class SQLiteAdapter implements DatabaseAdapter {
       INSERT INTO users (email, username, password_hash, is_admin, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    
+
     const result = stmt.run(email, username, passwordHash || null, isAdmin ? 1 : 0, now, now);
-    
-    return this.getUserById(Number(result.lastInsertRowid))!;
+
+    const created = await this.getUserById(Number(result.lastInsertRowid));
+    if (!created) {
+      throw new Error('User creation failed: unable to fetch created user');
+    }
+    return created;
   }
 
   async getUserByEmail(email: string): Promise<UserData | null> {
@@ -177,22 +185,22 @@ class SQLiteAdapter implements DatabaseAdapter {
   async updateUser(id: number, data: Partial<UserData>): Promise<boolean> {
     const updates = [];
     const values = [];
-    
+
     if (data.username !== undefined) {
       updates.push('username = ?');
       values.push(data.username);
     }
-    
+
     if (data.email !== undefined) {
       updates.push('email = ?');
       values.push(data.email);
     }
-    
+
     if (data.password_hash !== undefined) {
       updates.push('password_hash = ?');
       values.push(data.password_hash);
     }
-    
+
     if (data.is_admin !== undefined) {
       updates.push('is_admin = ?');
       values.push(data.is_admin ? 1 : 0);
@@ -212,7 +220,7 @@ class SQLiteAdapter implements DatabaseAdapter {
       updates.push('subscription_id = ?');
       values.push(data.subscription_id);
     }
-    
+
     updates.push('updated_at = ?');
     values.push(new Date().toISOString());
     values.push(id);
@@ -226,7 +234,7 @@ class SQLiteAdapter implements DatabaseAdapter {
     await this.clearUserProgress(id);
     const deleteSessionsStmt = this.db.prepare('DELETE FROM sessions WHERE user_id = ?');
     deleteSessionsStmt.run(id);
-    
+
     // Then delete the user
     const stmt = this.db.prepare('DELETE FROM users WHERE id = ?');
     return stmt.run(id).changes > 0;
@@ -239,7 +247,7 @@ class SQLiteAdapter implements DatabaseAdapter {
       (user_id, question_id, answered_at, genre, subgenre, level)
       VALUES (?, ?, ?, ?, ?, ?)
     `);
-    
+
     stmt.run(userId, questionId, new Date().toISOString(), genre ?? null, subgenre ?? null, level ?? null);
   }
 
@@ -266,13 +274,13 @@ class SQLiteAdapter implements DatabaseAdapter {
   async getSession(sessionId: string): Promise<{ user_id: number } | null> {
     const stmt = this.db.prepare('SELECT user_id FROM sessions WHERE session_id = ?');
     const session = stmt.get(sessionId) as { user_id: number } | null;
-    
+
     if (session) {
       // Update last activity
       const updateStmt = this.db.prepare('UPDATE sessions SET last_activity = ? WHERE session_id = ?');
       updateStmt.run(new Date().toISOString(), sessionId);
     }
-    
+
     return session;
   }
 

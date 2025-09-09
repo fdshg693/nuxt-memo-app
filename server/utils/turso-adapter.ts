@@ -33,7 +33,7 @@ export class TursoAdapter implements DatabaseAdapter {
     }
 
     console.log(`Initializing Turso database connection to: ${url}`);
-    
+
     // libSQL クライアントを初期化
     // createClient() は Turso SDK の主要な初期化関数
     this.client = createClient({
@@ -41,8 +41,8 @@ export class TursoAdapter implements DatabaseAdapter {
       authToken,  // Tursoダッシュボードから取得した認証トークン
     });
 
-    this.initPromise = this.initTables();
-    console.log('Turso database initialized successfully');
+    // Initialize with retry+backoff to handle transient network/auth issues in serverless environments
+    this.initPromise = this.initWithRetry();
   }
 
   private async ensureInitialized(): Promise<void> {
@@ -93,18 +93,45 @@ export class TursoAdapter implements DatabaseAdapter {
     `);
   }
 
+  // Initialize client + tables with retry/backoff to tolerate transient errors
+  private async initWithRetry(maxAttempts: number = 5, baseDelayMs: number = 200): Promise<void> {
+    let attempt = 0;
+    while (attempt < maxAttempts) {
+      try {
+        // Quick sanity check: test a simple query to validate connection/auth
+        await this.client.execute('SELECT 1');
+        // If connection test succeeds, ensure tables exist
+        await this.initTables();
+        console.log('Turso database initialized successfully');
+        return;
+      } catch (err: any) {
+        attempt++;
+        const delay = baseDelayMs * Math.pow(2, attempt - 1);
+        console.error(`Turso init attempt ${attempt} failed: ${err?.message || err}. Retrying in ${delay}ms...`);
+        if (attempt >= maxAttempts) {
+          console.error('Turso initialization failed after maximum attempts');
+          throw err;
+        }
+        // eslint-disable-next-line no-await-in-loop
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
   // User operations
   async createUser(email: string, username: string, passwordHash?: string, isAdmin: boolean = false): Promise<UserData> {
     await this.ensureInitialized();
     const now = new Date().toISOString();
-    
+
     const result = await this.client.execute({
       sql: `INSERT INTO users (email, username, password_hash, is_admin, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?)`,
       args: [email, username, passwordHash || null, isAdmin ? 1 : 0, now, now]
     });
-    
-    return this.getUserById(Number(result.lastInsertRowid))!;
+
+    const user = await this.getUserById(Number(result.lastInsertRowid));
+    if (!user) throw new Error('Failed to retrieve newly created user');
+    return user;
   }
 
   async getUserByEmail(email: string): Promise<UserData | null> {
@@ -113,9 +140,9 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'SELECT * FROM users WHERE email = ?',
       args: [email]
     });
-    
+
     if (result.rows.length === 0) return null;
-    
+
     const row = result.rows[0];
     return {
       id: Number(row.id),
@@ -137,9 +164,9 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'SELECT * FROM users WHERE id = ?',
       args: [id]
     });
-    
+
     if (result.rows.length === 0) return null;
-    
+
     const row = result.rows[0];
     return {
       id: Number(row.id),
@@ -158,7 +185,7 @@ export class TursoAdapter implements DatabaseAdapter {
   async getAllUsers(): Promise<UserData[]> {
     await this.ensureInitialized();
     const result = await this.client.execute('SELECT * FROM users ORDER BY created_at DESC');
-    
+
     return result.rows.map(row => ({
       id: Number(row.id),
       email: String(row.email),
@@ -177,22 +204,22 @@ export class TursoAdapter implements DatabaseAdapter {
     await this.ensureInitialized();
     const updates = [];
     const values = [];
-    
+
     if (data.username !== undefined) {
       updates.push('username = ?');
       values.push(data.username);
     }
-    
+
     if (data.email !== undefined) {
       updates.push('email = ?');
       values.push(data.email);
     }
-    
+
     if (data.password_hash !== undefined) {
       updates.push('password_hash = ?');
       values.push(data.password_hash);
     }
-    
+
     if (data.is_admin !== undefined) {
       updates.push('is_admin = ?');
       values.push(data.is_admin ? 1 : 0);
@@ -212,7 +239,7 @@ export class TursoAdapter implements DatabaseAdapter {
       updates.push('subscription_id = ?');
       values.push(data.subscription_id);
     }
-    
+
     updates.push('updated_at = ?');
     values.push(new Date().toISOString());
     values.push(id);
@@ -221,7 +248,7 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: `UPDATE users SET ${updates.join(', ')} WHERE id = ?`,
       args: values
     });
-    
+
     return result.rowsAffected > 0;
   }
 
@@ -233,13 +260,13 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'DELETE FROM sessions WHERE user_id = ?',
       args: [id]
     });
-    
+
     // Then delete the user
     const result = await this.client.execute({
       sql: 'DELETE FROM users WHERE id = ?',
       args: [id]
     });
-    
+
     return result.rowsAffected > 0;
   }
 
@@ -283,7 +310,7 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'SELECT * FROM user_progress WHERE user_id = ? ORDER BY answered_at DESC',
       args: [userId]
     });
-    
+
     // result.rows から結果セットを取得してTypeScriptオブジェクトに変換
     return result.rows.map(row => ({
       id: Number(row.id),
@@ -302,7 +329,7 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'DELETE FROM user_progress WHERE user_id = ?',
       args: [userId]
     });
-    
+
     return result.rowsAffected > 0;
   }
 
@@ -323,15 +350,15 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'SELECT user_id FROM sessions WHERE session_id = ?',
       args: [sessionId]
     });
-    
+
     if (result.rows.length === 0) return null;
-    
+
     // Update last activity
     await this.client.execute({
       sql: 'UPDATE sessions SET last_activity = ? WHERE session_id = ?',
       args: [new Date().toISOString(), sessionId]
     });
-    
+
     return { user_id: Number(result.rows[0].user_id) };
   }
 
@@ -341,7 +368,7 @@ export class TursoAdapter implements DatabaseAdapter {
       sql: 'DELETE FROM sessions WHERE session_id = ?',
       args: [sessionId]
     });
-    
+
     return result.rowsAffected > 0;
   }
 

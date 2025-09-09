@@ -117,6 +117,18 @@ try {
 
 ## 本プロジェクトでの実装
 
+> 注: 本プロジェクトでは、ログイン情報とユーザーの学習進捗の永続化にTurso（libSQL）を利用しています。実装は公式のTypeScript SDK（@libsql/client / Turso SDK）を通じて行われ、サーバーレス環境（例: Vercel）のNuxt Functions上で安全に動作するように設計されています。
+
+主な利用用途:
+- 認証情報（ユーザー、パスワードハッシュ、管理者フラグ）の保存
+- ユーザーごとの問題解答履歴・進捗（`user_progress`テーブル）の永続化
+
+サーバーレスにデプロイする際の注意点:
+- 環境変数（`TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN`）を必ずVercelに設定すること
+- ファイルシステム（ローカルSQLite）は一時的にしか保持されないため、運用時はTurso等のクラウドDBを選択すること
+- 接続テストを行い、認証エラーやネットワークエラーのハンドリングを強化すること
+
+
 ### 1. データベースアダプター (`server/utils/turso-adapter.ts`)
 
 #### クラス構造
@@ -354,9 +366,3 @@ Error: no such table: users
 - [libSQL TypeScript リファレンス](https://docs.turso.tech/sdk/ts/reference)
 - [本プロジェクトでの実装](../server/utils/turso-adapter.ts)
 - [データベース抽象化設計](./DATABASE_ABSTRACTION.md)
-
-## 更新履歴
-
-- 2024-12: 初版作成
-- プロジェクトでのTurso使用パターンをドキュメント化
-- SQLiteフォールバック機能の説明追加

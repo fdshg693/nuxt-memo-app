@@ -65,6 +65,23 @@
 - **データベース拡張性**: MySQL/PostgreSQL対応可能
 - **環境管理**: .env configuration
 
+### Vercel / サーバーレス対応
+
+このプロジェクトはVercelなどのサーバーレス環境でも動作するように設計されています。サーバーレス環境ではプロセスが短命でファイルシステムが永続化されないため、ローカルのSQLiteファイルに依存する運用は避けるかフォールバックを用意してください。
+
+- 推奨パターン: 認証情報やユーザープログレスの永続化にはTurso（libSQL）などサーバーレス対応のクラウドデータベースを利用します。
+- NuxtのサーバーAPIやサーバーサイド処理はサーバーレス関数（Vercel Functions）で動作するように実装されています。
+- 環境変数はVercelのダッシュボードまたは`vercel env`コマンドで設定してください。
+
+例: Vercelにデプロイする際に必須となる環境変数
+```
+OPENAI_API_KEY
+STRIPE_SECRET_KEY
+TURSO_DATABASE_URL
+TURSO_AUTH_TOKEN
+DATABASE_TYPE=turso
+```
+
 ## 📋 セットアップ
 
 ### 1. 依存関係のインストール
