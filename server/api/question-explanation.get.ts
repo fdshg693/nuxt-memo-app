@@ -1,6 +1,9 @@
 import { defineEventHandler, getQuery } from 'h3'
-import { readFileSync } from 'fs'
-import { join } from 'path'
+import questionsData from '~/data/sqlQuestions.json'
+
+// NOTE: Switched from import.meta.glob to direct static import so that
+// the bundle contains plain JSON without relying on the runtime glob shim.
+// This guarantees no globalThis._importMeta_.glob usage in serverless output.
 
 export default defineEventHandler(async (event) => {
   const query = getQuery(event)
@@ -11,16 +14,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
-    // Read the SQL questions file
-    const filePath = join(process.cwd(), 'data', 'sqlQuestions.json')
-    const fileContent = readFileSync(filePath, 'utf8')
-    const questions = JSON.parse(fileContent)
+    // Find the question by ID from the eagerly imported data
+    const question = (questionsData as any[]).find((q: any) => q.id === parseInt(questionId.toString()))
 
-    // Find the question by ID
-    const question = questions.find((q: any) => q.id === parseInt(questionId.toString()))
-    
     if (!question) {
-      return { 
+      return {
         error: 'Question not found',
         title: `問題 ${questionId} の解説`,
         description: '指定された問題が見つかりません。'

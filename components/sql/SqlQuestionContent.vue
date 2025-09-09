@@ -8,13 +8,11 @@
           ✓ 正解済み
         </div>
       </div>
-      
+
       <!-- Explanation Button -->
       <div class="flex gap-2 mb-2">
-        <button
-          @click="showExplanation"
-          class="px-3 py-1 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition shadow"
-        >
+        <button @click="showExplanation"
+          class="px-3 py-1 text-sm bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition shadow">
           📚 解説を見る
         </button>
         <span v-if="currentQA.genre && currentQA.genre.length > 0" class="text-xs text-gray-500 self-center">
@@ -23,13 +21,9 @@
       </div>
     </div>
 
-    <!-- Question navigation -->
-    <QuestionNavigation 
-      :index="index" 
-      :questions-length="questionsLength" 
-      @prev="$emit('prev')"
-      @next="$emit('next')" 
-    />
+    <!-- Question navigation (hidden when hideNavigation prop is true) -->
+    <QuestionNavigation v-if="!hideNavigation" :index="index" :questions-length="questionsLength" @prev="$emit('prev')"
+      @next="$emit('next')" />
 
     <!-- Database tables -->
     <div class="flex flex-row flex-wrap gap-4 mb-4">
@@ -65,6 +59,7 @@ const props = defineProps<{
   index: number;
   questionsLength: number;
   alreadyAnswered?: boolean;
+  hideNavigation?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -74,14 +69,14 @@ const emit = defineEmits<{
 }>();
 
 function showExplanation() {
-  const genre = Array.isArray(props.currentQA.genre) 
-    ? props.currentQA.genre[0] 
+  const genre = Array.isArray(props.currentQA.genre)
+    ? props.currentQA.genre[0]
     : props.currentQA.genre;
-  
+
   if (genre) {
-    emit('show-explanation', { 
+    emit('show-explanation', {
       questionId: props.currentQA.id,
-      genre: genre 
+      genre: genre
     });
   }
 }

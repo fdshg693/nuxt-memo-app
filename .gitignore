@@ -29,5 +29,15 @@ playwright-report/
 playwright/.cache/
 memo.md
 
+# Copilot
 */copilot/*
 copilot
+
+# Vercel
+.vercel/
+
+*.db
+*.sqlite
+*.sqlite3
+*.db-wal
+*.db-shm

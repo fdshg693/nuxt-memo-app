@@ -9,11 +9,11 @@ import type { AIServiceContext, GeneratedQuestion } from './types'
  */
 export function useSqlQuestionGenerator() {
   const service = createAIService(sqlQuestionGenerationConfig)
-  const { 
-    validateTable, 
-    getAvailableTables, 
+  const {
+    validateTable,
+    getAvailableTables,
     getDatabaseSchemaForPrompt,
-    validateGeneratedQuestion 
+    validateGeneratedQuestion
   } = useDatabaseValidation()
 
   /**
@@ -72,7 +72,7 @@ ${getDatabaseSchemaForPrompt(dbName)}`
 
       // JSON応答をパース
       const parsedResponse = parseAIResponse(response.response)
-      
+
       // 問題オブジェクトを作成
       const generatedQuestion: GeneratedQuestion = {
         id: Date.now(), // 一時的なID
@@ -87,7 +87,7 @@ ${getDatabaseSchemaForPrompt(dbName)}`
 
       // 生成された問題を検証
       const validation = validateGeneratedQuestion(generatedQuestion)
-      
+
       if (!validation.isValid) {
         console.warn('Generated question validation failed:', validation.errors)
         generatedQuestion.validationWarnings = validation.errors
@@ -98,7 +98,7 @@ ${getDatabaseSchemaForPrompt(dbName)}`
 
     } catch (error) {
       console.error('Error generating SQL question:', error)
-      
+
       // エラー時のフォールバック応答
       return {
         id: Date.now(),
@@ -122,17 +122,21 @@ ${getDatabaseSchemaForPrompt(dbName)}`
    * @returns 構築されたプロンプト
    */
   function buildGenerationPrompt(genre: string, level: number, selectedTable: string): string {
+    const levelDescriptions: Record<number, string> = {
+      1: '基本的な単一テーブル操作',
+      2: '条件付きクエリや関数使用',
+      3: '複数テーブルの結合や複雑な条件',
+      4: 'サブクエリや高度な機能',
+      5: 'パフォーマンス最適化や複雑なビジネスロジック'
+    }
+
+    const description = levelDescriptions[level] || '汎用的なSQL操作'
+
     return `以下の条件でSQL学習問題を生成してください：
 
 ジャンル: ${genre}
-レベル: ${level}
+レベル: ${level} - ${description}
 使用テーブル: ${selectedTable}
-
-レベル1: 基本的な単一テーブル操作
-レベル2: 条件付きクエリや関数使用
-レベル3: 複数テーブルの結合や複雑な条件
-レベル4: サブクエリや高度な機能
-レベル5: パフォーマンス最適化や複雑なビジネスロジック
 
 必ず指定されたテーブルの実際のカラム名を使用してください。`
   }

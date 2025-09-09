@@ -10,7 +10,7 @@
         <div v-if="showPromptModal" class="fixed inset-0 flex items-center justify-center bg-black bg-opacity-30 z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg">
                 <h3 class="text-lg font-bold mb-2">AIアクション</h3>
-                
+
                 <!-- 入力タイプ選択 -->
                 <div class="mb-3">
                     <label class="inline-flex items-center mr-4">
@@ -27,7 +27,8 @@
                 <AiPromptSelector v-if="inputType === 'dropdown'" v-model="customPrompt" />
 
                 <!-- 自由入力 -->
-                <AiPromptInput v-if="inputType === 'text'" v-model="userInput" @validation-change="handleValidationChange" ref="promptInputRef" />
+                <AiPromptInput v-if="inputType === 'text'" v-model="userInput"
+                    @validation-change="handleValidationChange" ref="promptInputRef" />
 
                 <div class="flex justify-end gap-2">
                     <button @click="showPromptModal = false" class="px-4 py-2 rounded bg-gray-200">キャンセル</button>
@@ -42,7 +43,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { ref, defineProps, defineEmits } from 'vue'
+import { ref, defineProps } from 'vue'
 import AiPromptSelector from './ai/AiPromptSelector.vue'
 import AiPromptInput from './ai/AiPromptInput.vue'
 import { promptOptions } from './ai/constants/aiPromptOptions'
@@ -69,7 +70,7 @@ function openPromptModal() {
 
 function sendPrompt() {
     let promptToSend = ''
-    
+
     if (inputType.value === 'dropdown') {
         promptToSend = customPrompt.value
     } else {
@@ -79,7 +80,7 @@ function sendPrompt() {
         }
         promptToSend = userInput.value.trim()
     }
-    
+
     emit('ask-ai', promptToSend)
     showPromptModal.value = false
 }
