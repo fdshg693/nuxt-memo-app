@@ -1,52 +1,112 @@
 [
     {
         "id": 1,
-        "question": "What is the capital of France?",
-        "answer": "Paris"
+        "question": "フランスの首都はどこですか？",
+        "options": [
+            "パリ",
+            "ロンドン",
+            "ベルリン",
+            "ローマ"
+        ],
+        "correctAnswer": 0
     },
     {
         "id": 2,
-        "question": "What is 2 + 2?",
-        "answer": "4"
+        "question": "2 + 2の答えは？",
+        "options": [
+            "3",
+            "4",
+            "5",
+            "6"
+        ],
+        "correctAnswer": 1
     },
     {
         "id": 3,
-        "question": "What is the largest planet in our solar system?",
-        "answer": "Jupiter"
+        "question": "太陽系で最も大きな惑星は？",
+        "options": [
+            "土星",
+            "木星",
+            "海王星",
+            "天王星"
+        ],
+        "correctAnswer": 1
     },
     {
         "id": 4,
-        "question": "Who wrote 'Romeo and Juliet'?",
-        "answer": "William Shakespeare"
+        "question": "「ロミオとジュリエット」の作者は誰ですか？",
+        "options": [
+            "チャールズ・ディケンズ",
+            "ジェーン・オースティン",
+            "ウィリアム・シェイクスピア",
+            "マーク・トウェイン"
+        ],
+        "correctAnswer": 2
     },
     {
         "id": 5,
-        "question": "What is the boiling point of water?",
-        "answer": "100°C"
+        "question": "水の沸点は何度ですか？",
+        "options": [
+            "90°C",
+            "95°C",
+            "100°C",
+            "105°C"
+        ],
+        "correctAnswer": 2
     },
     {
         "id": 6,
-        "question": "What is the speed of light?",
-        "answer": "299,792,458 m/s"
+        "question": "光の速度はおよそどのくらいですか？",
+        "options": [
+            "約30万km/秒",
+            "約3万km/秒",
+            "約300万km/秒",
+            "約3000万km/秒"
+        ],
+        "correctAnswer": 0
     },
     {
         "id": 7,
-        "question": "Who painted the Mona Lisa?",
-        "answer": "Leonardo da Vinci"
+        "question": "「モナリザ」を描いた画家は誰ですか？",
+        "options": [
+            "ミケランジェロ",
+            "ピカソ",
+            "ゴッホ",
+            "レオナルド・ダ・ヴィンチ"
+        ],
+        "correctAnswer": 3
     },
     {
         "id": 8,
-        "question": "What is the chemical symbol for gold?",
-        "answer": "Au"
+        "question": "金の化学記号は何ですか？",
+        "options": [
+            "Go",
+            "Gd",
+            "Au",
+            "Ag"
+        ],
+        "correctAnswer": 2
     },
     {
         "id": 9,
-        "question": "What is the largest mammal?",
-        "answer": "Blue whale"
+        "question": "最も大きな哺乳類は何ですか？",
+        "options": [
+            "シロナガスクジラ",
+            "アフリカゾウ",
+            "キリン",
+            "ホッキョクグマ"
+        ],
+        "correctAnswer": 0
     },
     {
         "id": 10,
-        "question": "What is the currency of Japan?",
-        "answer": "Yen"
+        "question": "日本の通貨は何ですか？",
+        "options": [
+            "ドル",
+            "ユーロ",
+            "ウォン",
+            "円"
+        ],
+        "correctAnswer": 3
     }
 ]
